@@ -55,9 +55,10 @@ public final class VLBeacon {
     public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol) {
         if var event = eventStructBody as? PlayerBeaconEventStruct {
             event.tveProvider = tveProvider
+            event.triggerEvents()
+        } else {
+            eventStructBody.triggerEvents()
         }
-        
-        eventStructBody.triggerEvents()
     }
     
 }
