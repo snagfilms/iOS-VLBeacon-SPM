@@ -19,6 +19,8 @@ public final class VLBeacon {
     
     internal var beaconBaseUrl : String?
     
+    public var tveProvider: String?
+    
     public var authorizationToken : String? {
         didSet {
             guard let authorizationToken else { return }
@@ -51,6 +53,10 @@ public final class VLBeacon {
     }
     
     public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol) {
+        if var event = eventStructBody as? PlayerBeaconEventStruct {
+            event.tveProvider = tveProvider
+        }
+        
         eventStructBody.triggerEvents()
     }
     
