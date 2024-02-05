@@ -9,7 +9,15 @@ import Foundation
 
 enum APIUrl {
     static func getAPIBaseUrl() -> String? {
-        return VLBeacon.getInstance().beaconBaseUrl
+        if let baseUrl = VLBeacon.getInstance().beaconBaseUrl {
+            return baseUrl
+        }
+        
+        guard let url = VLBeacon.getInstance().getBeaconBaseUrl() else { return nil }
+        
+        VLBeacon.getInstance().beaconBaseUrl = url
+        
+        return url
     }
 }
 
