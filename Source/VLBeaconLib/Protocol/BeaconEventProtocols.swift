@@ -56,5 +56,5 @@ public protocol BeaconEventPayloadProtocol: StructToDictionaryProtocol {}
 
 
 public protocol BeaconEventBodyProtocol: StructToDictionaryProtocol, BeaconDBQueryProtocol {
-    func triggerEvents(authToken: String)
+    func triggerEvents(authToken: String, beaconInstance: VLBeacon)
 }

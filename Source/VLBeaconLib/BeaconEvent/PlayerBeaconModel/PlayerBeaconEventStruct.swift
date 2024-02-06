@@ -56,7 +56,13 @@ public struct PlayerBeaconEventStruct {
     
     var additionalData: [String: Any]?
     
-    public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolutionHeight: Int? = nil, resolutionWidth: Int? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, siteId: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil) {
+    public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolutionHeight: Int? = nil, resolutionWidth: Int? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, siteId: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil, tokenIdentity: TokenIdentity?) {
+        
+        guard let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity else { return }
+        
+        if (tokenId.userId ?? "").isEmpty {
+            return
+        }
         
         self.pa = eventName.getBeaconEventNameString()
         self.vid = vid ?? ""
@@ -84,8 +90,8 @@ public struct PlayerBeaconEventStruct {
         self.appversion = appversion
         self.duration = duration
         
-		self.aid = VLBeacon.getInstance().tokenIdentity?.siteName ?? ""
-		self.cid = VLBeacon.getInstance().tokenIdentity?.siteId ?? ""
+        self.aid = tokenId.siteName ?? ""
+		self.cid = tokenId.siteId ?? ""
         
         if let apos {
             self.apos = String(describing: apos)
@@ -121,25 +127,25 @@ public struct PlayerBeaconEventStruct {
             self.bufferHealth = String(describing: bufferHealth)
         }
         
-        if let userID = VLBeacon.getInstance().tokenIdentity?.userId {
+        if let userID = tokenId.userId {
             self.uid = userID
         } else {
             self.uid = userId
         }
         
-        if let deviceID = VLBeacon.getInstance().tokenIdentity?.deviceId {
+        if let deviceID = tokenId.deviceId {
             self.deviceid = deviceID
         } else {
             self.deviceid = Utility.sharedInstance.getUUID()
         }
         
-        if let siteID = VLBeacon.getInstance().tokenIdentity?.siteId {
+        if let siteID = tokenId.siteId {
             self.siteid = siteID
         } else {
             self.siteid = siteId
         }
         
-        if let environment = VLBeacon.getInstance().tokenIdentity?.siteName?.getEnvironment()?.rawValue {
+        if let environment = tokenId.siteName?.getEnvironment()?.rawValue {
             self.environment = environment
         } else {
             self.environment = environment
@@ -174,11 +180,11 @@ public struct PlayerBeaconEventStruct {
 
 extension PlayerBeaconEventStruct: BeaconEventBodyProtocol {
     
-    public func triggerEvents(authToken: String) {
-        if let beaconBaseURL = APIUrl.getAPIBaseUrl(){
-			DispatchQueue.global(qos: .utility).async {
-				DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL + APIUrlEndPoint.playerBeacon.rawValue)
-			}
+    public func triggerEvents(authToken: String, beaconInstance: VLBeacon) {
+        guard let beaconBaseURL = beaconInstance.getBeaconBaseUrl() else { return }
+        
+        DispatchQueue.global(qos: .utility).async {
+            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL + APIUrlEndPoint.playerBeacon.rawValue)
         }
     }
     

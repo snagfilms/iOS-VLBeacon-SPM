@@ -17,7 +17,10 @@ public struct AuthenticationPayload: BeaconEventPayloadProtocol {
     var existingUser: String?
     var additionalData: [String: Any]?
     
-    public init(type: AuthType? = nil, subType: AuthSubType? = nil, email: String? = nil, phoneNumber: String? = nil, mvpd: String? = nil, existingUser: Bool? = nil, additionalData: [String : String]? = nil) {
+    public init(type: AuthType? = nil, subType: AuthSubType? = nil, email: String? = nil, phoneNumber: String? = nil, mvpd: String? = nil, existingUser: Bool? = nil, additionalData: [String : String]? = nil, tokenIdentity: TokenIdentity?) {
+        
+        let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity
+        
         self.type = type?.typeName
         self.subType = subType?.subTypeName
         self.mvpd = mvpd
@@ -26,13 +29,13 @@ public struct AuthenticationPayload: BeaconEventPayloadProtocol {
             self.existingUser = String(existingUser)
         }
         
-        if let emailID = VLBeacon.getInstance().tokenIdentity?.emailId {
+        if let emailID = tokenId?.emailId {
             self.email = emailID
         } else {
             self.email = email
         }
         
-        if let phoneNumber = VLBeacon.getInstance().tokenIdentity?.phoneNumber {
+        if let phoneNumber = tokenId?.phoneNumber {
             self.phoneNo = phoneNumber
         } else {
             self.phoneNo = phoneNumber

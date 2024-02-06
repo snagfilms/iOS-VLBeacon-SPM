@@ -21,12 +21,12 @@ internal class BeaconSyncManager {
     var queryManager: BeaconQueryManager
     
     //MARK:-  Sync Events With Server
-    func startSyncingTheEvents(authenticationToken: String, withSuccess success: @escaping (_: Bool) -> Void) {
+    func startSyncingTheEvents(vlBeacon: VLBeacon, authenticationToken: String, withSuccess success: @escaping (_: Bool) -> Void) {
         
         for beaconType in BeaconType.allCases {
             if let arrayOfBeaconEvents = queryManager.fetchTheUnsyncronisedBeaconEvents(beaconType), !arrayOfBeaconEvents.isEmpty {
                 Log.shared.d("DB: Syncing DB \(beaconType) Events")
-                self.postDataToServer(arrayOfBeaconEvents: arrayOfBeaconEvents, authenticationToken: authenticationToken, beaconType: beaconType)
+                self.postDataToServer(vlBeacon: vlBeacon, arrayOfBeaconEvents: arrayOfBeaconEvents, authenticationToken: authenticationToken, beaconType: beaconType)
             } else {
                 Log.shared.d("DB: No DB \(beaconType) Events")
             }
@@ -37,7 +37,7 @@ internal class BeaconSyncManager {
     /// Method to post data to server in form on Array with nested dictionaries
     ///
     /// - Parameter arrayOfBeaconEvents: return Array
-    private func postDataToServer(arrayOfBeaconEvents : Array<Dictionary<String,Any>>, authenticationToken: String, beaconType: BeaconType)
+    private func postDataToServer(vlBeacon: VLBeacon, arrayOfBeaconEvents : Array<Dictionary<String,Any>>, authenticationToken: String, beaconType: BeaconType)
     {
         Log.shared.d("DB: Posting DB \(beaconType) Events")
         if let beaconBaseURL = APIUrl.getAPIBaseUrl() {
