@@ -24,30 +24,32 @@ public struct UserBeaconEventStruct {
     var eventData: [String: Any]?
     var additionalData: [String: Any]?
     
-    public init(eventName: UserBeaconEventEnum, userId: String? = nil, profileId: String? = nil, siteId: String? = nil, pfm: String? = nil, etstamp: String? = nil, environment: String? = nil, appversion: String? = nil, source: String?, eventData: BeaconEventPayloadProtocol? = nil, additionalData: [String : Any]? = nil) {
+    public init(eventName: UserBeaconEventEnum, userId: String? = nil, profileId: String? = nil, siteId: String? = nil, pfm: String? = nil, etstamp: String? = nil, environment: String? = nil, appversion: String? = nil, source: String?, eventData: BeaconEventPayloadProtocol? = nil, additionalData: [String : Any]? = nil, tokenIdentity: TokenIdentity?) {
+        
+        let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity
         
         self.ename = eventName.getBeaconEventNameString()
         self.profid = profileId ?? ""
         
-        if let userID = VLBeacon.getInstance().tokenIdentity?.userId {
+        if let userID = tokenId?.userId {
             self.uid = userID
         } else {
             self.uid = userId
         }
         
-        if let deviceID = VLBeacon.getInstance().tokenIdentity?.deviceId {
+        if let deviceID = tokenId?.deviceId {
             self.deviceid = deviceID
         } else {
             self.deviceid = Utility.sharedInstance.getUUID()
         }
         
-        if let siteID = VLBeacon.getInstance().tokenIdentity?.siteId {
+        if let siteID = tokenId?.siteId {
             self.siteid = siteID
         } else {
             self.siteid = siteId
         }
         
-        self.environment = VLBeacon.getInstance().tokenIdentity?.siteName?.getEnvironment()?.rawValue
+        self.environment = tokenId?.siteName?.getEnvironment()?.rawValue
         
         if let source{
             self.source = source
@@ -70,13 +72,11 @@ public struct UserBeaconEventStruct {
 
 extension UserBeaconEventStruct: BeaconEventBodyProtocol {
     
-    public func triggerEvents(authToken: String) {
+    public func triggerEvents(authToken: String, beaconInstance: VLBeacon) {
+        guard let beaconBaseURL = beaconInstance.getBeaconBaseUrl() else { return }
         
-        if let beaconBaseURL = APIUrl.getAPIBaseUrl() {
-//        print(">>>>> triggerBeacon: UserBeaconEventStruct: \(beaconBaseURL + APIUrlEndPoint.userBeacon.rawValue) -> \(self.toDictionary())")
-			DispatchQueue.global(qos: .utility).async {
-				DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL + APIUrlEndPoint.userBeacon.rawValue)
-			}
+        DispatchQueue.global(qos: .utility).async {
+            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL + APIUrlEndPoint.userBeacon.rawValue)
         }
     }
     

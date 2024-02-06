@@ -12,12 +12,12 @@ final public class VLBeacon {
     }
     
     private init() {
-        print("VLBeacon init");
+        print("VLBeacon init")
     }
     
     private let bundleIdentifier = "com.viewlift.beacon"
     
-    internal var tokenIdentity: TokenIdentity?
+    public var tokenIdentity: TokenIdentity?
     
     internal var beaconBaseUrl : String?
     
@@ -53,7 +53,7 @@ final public class VLBeacon {
         
         if NetworkStatus.sharedInstance.isNetworkAvailable() && !disabledTracking {
             if let authToken = authorizationToken {
-                sharedSyncManager.startSyncingTheEvents(authenticationToken: authToken, withSuccess: {(_ success: Bool) -> Void in
+                sharedSyncManager.startSyncingTheEvents(vlBeacon: self, authenticationToken: authToken, withSuccess: {(_ success: Bool) -> Void in
                 })
             }
         }
@@ -64,9 +64,9 @@ final public class VLBeacon {
         
         if var event = eventStructBody as? PlayerBeaconEventStruct {
             event.tveProvider = tveProvider
-            event.triggerEvents(authToken: authToken)
+            event.triggerEvents(authToken: authToken, beaconInstance: self)
         } else {
-            eventStructBody.triggerEvents(authToken: authToken)
+            eventStructBody.triggerEvents(authToken: authToken, beaconInstance: self)
         }
     }
     

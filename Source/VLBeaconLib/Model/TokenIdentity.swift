@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct TokenIdentity:Decodable {
+public struct TokenIdentity:Decodable {
     var userId:String?
     var emailId:String?
     var phoneNumber:String?
