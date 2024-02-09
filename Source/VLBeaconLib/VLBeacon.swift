@@ -62,11 +62,29 @@ final public class VLBeacon {
     public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol) {
         guard let authToken = self.authorizationToken, !disabledTracking else { return }
         
+        guard let uID = tokenIdentity?.userId as? String else { return }
+        let anonymousId = tokenIdentity?.anonymousId as? String
+        let deviceid = eventStructBody.toDictionary()["deviceid"] as? String
+        
         if var event = eventStructBody as? PlayerBeaconEventStruct {
+            if (anonymousId ?? "").isEmpty == false {
+                event.profid = "guest-user"
+                event.uid = deviceid
+            } else {
+                event.profid = uID
+            }
+            
             event.tveProvider = tveProvider
             event.triggerEvents(authToken: authToken, beaconInstance: self)
-        } else {
-            eventStructBody.triggerEvents(authToken: authToken, beaconInstance: self)
+        } else if var eventUser = eventStructBody as? UserBeaconEventStruct {
+            if (anonymousId ?? "").isEmpty == false {
+                eventUser.profid = "guest-user"
+                eventUser.uid = deviceid
+            } else {
+                eventUser.profid = uID
+            }
+            
+            eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
         }
     }
     
