@@ -146,12 +146,6 @@ public struct PlayerBeaconEventStruct {
             self.siteid = siteId
         }
         
-        if let environment = tokenId.siteName?.getEnvironment()?.rawValue {
-            self.environment = environment
-        } else {
-            self.environment = environment
-        }
-        
         if let source{
             self.source = source
         } else {
@@ -166,10 +160,6 @@ public struct PlayerBeaconEventStruct {
         
         
         self.pfm = Utility.sharedInstance.getPlatform()
-                
-        if let aid{
-            self.environment = aid.getEnvironment()?.rawValue
-        }
         
         self.tstamp = Utility.sharedInstance.getCurrentTimestampInGMT()
         

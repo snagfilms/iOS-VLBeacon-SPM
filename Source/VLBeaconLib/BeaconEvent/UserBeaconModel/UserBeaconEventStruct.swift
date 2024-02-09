@@ -49,8 +49,6 @@ public struct UserBeaconEventStruct {
             self.siteid = siteId
         }
         
-        self.environment = tokenId?.siteName?.getEnvironment()?.rawValue
-        
         if let source{
             self.source = source
         } else {
