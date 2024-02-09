@@ -23,6 +23,8 @@ final public class VLBeacon {
     
     public var tveProvider: String?
     
+    public var environment: String = ""
+    
     public var authorizationToken : String? {
         didSet {
             guard let authorizationToken else { return }
@@ -73,6 +75,7 @@ final public class VLBeacon {
             } else {
                 event.profid = uID
             }
+            event.environment = environment
             
             event.tveProvider = tveProvider
             event.triggerEvents(authToken: authToken, beaconInstance: self)
@@ -84,6 +87,7 @@ final public class VLBeacon {
                 eventUser.profid = uID
             }
             
+            eventUser.environment = environment
             eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
         }
     }
@@ -95,7 +99,7 @@ extension VLBeacon{
     func getBeaconBaseUrl() -> String? {
         guard let bundlePath = Bundle.main.path(forResource: "SiteConfig", ofType: "plist"),
               let dict = NSDictionary.init(contentsOfFile: bundlePath),
-              let apiEndpoint = dict["BeaconApiUrl"] as? String else { return self.getBeaconBaseUrlFromConfiguration() }
+              let apiEndpoint = dict["BeaconApiUrl"] as? String else { return nil }
         return apiEndpoint
     }
     
@@ -106,31 +110,32 @@ extension VLBeacon{
         return loggerValue
     }
     
-    private func getBeaconBaseUrlFromConfiguration() -> String? {
-        
-        var filePath : String?
-        let classBundle = Bundle(for: type(of: self))
-        if let classBundlePath = classBundle.path(forResource: "VLBeacon", ofType: "bundle"), let bundle = Bundle(path: classBundlePath) {
-            filePath = bundle.path(forResource: "Configuration", ofType: "plist")
-        }
-        if filePath == nil {
-            guard let bundle = Bundle(identifier: bundleIdentifier) else {
-                return nil
-            }
-            filePath = bundle.path(forResource: "Configuration", ofType: "plist")
-        }
-        
-        guard let filePath else { return nil }
-        if let configData = try? Data(contentsOf: URL(fileURLWithPath: filePath)), let configuration = try? PropertyListDecoder().decode(VLConfiguration.self, from: configData),
-           let apiUrl = configuration.beaconApiUrl {
-            return apiUrl
-        }
-        return nil
-    }
-    
     private func setupConfiguration() {
         beaconBaseUrl = getBeaconBaseUrl()
+        environment = getEnvironment()
         debugLogs = getDebugLogger()
+    }
+    
+    
+    func getEnvironment() -> String {
+        guard let bundlePath = Bundle.main.path(forResource: "SiteConfig", ofType: "plist"),
+              let dict = NSDictionary.init(contentsOfFile: bundlePath),
+              let environment = dict["Env"] as? String else { return "" }
+        
+        switch environment.lowercased() {
+        case "prod":
+            return "production"
+        case "develop":
+            return "develop"
+        case "stage":
+            return "stage"
+        case "uat":
+            return "uat"
+        case "qa":
+            return "qa"
+        default:
+            return ""
+        }
     }
     
 }

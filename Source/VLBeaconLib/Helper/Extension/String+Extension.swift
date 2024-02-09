@@ -27,21 +27,5 @@ extension String{
         
         return output as String
     }
-    
-    //MARK :- Get App Environment
-    func getEnvironment() -> Environment? {
-        switch self {
-        case "msndevelop":
-            return .dev
-        case "msnqa":
-            return .qa
-        case "msnuat":
-            return .qa
-        case "msn", "monumental-network":
-            return .production
-        default:
-            return nil
-        }
-    }
 
 }
