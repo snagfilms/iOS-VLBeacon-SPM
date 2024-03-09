@@ -8,20 +8,11 @@
 import Foundation
 
 enum APIUrl {
-    static func getAPIBaseUrl() -> String? {
-        if let baseUrl = VLBeacon.getInstance().beaconBaseUrl {
-            return baseUrl
-        }
-        
-        guard let url = VLBeacon.getInstance().getBeaconBaseUrl() else { return nil }
-        
-        VLBeacon.getInstance().beaconBaseUrl = url
-        
-        return url
+    static func getUserBeaconBaseUrl() -> String? {
+        return VLBeacon.getInstance().userBeaconUrl
     }
-}
-
-enum APIUrlEndPoint: String {
-    case playerBeacon = "/player-beacon"
-    case userBeacon = "/user-beacon"
+    
+    static func getPlayerBeaconBaseUrl() -> String? {
+        return VLBeacon.getInstance().playerBeaconUrl
+    }
 }

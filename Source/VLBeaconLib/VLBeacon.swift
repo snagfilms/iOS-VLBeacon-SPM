@@ -19,7 +19,8 @@ final public class VLBeacon {
     
     public var tokenIdentity: TokenIdentity?
     
-    internal var beaconBaseUrl : String?
+    internal var userBeaconUrl : String?
+    internal var playerBeaconUrl : String?
     
     public var tveProvider: String?
     
@@ -38,7 +39,8 @@ final public class VLBeacon {
             Log.shared.isLoggingEnabled = debugLogs
             if debugLogs{
                 Log.shared.d("VLBeacon debug logs enabled!")
-                Log.shared.d("Beacon events pointing to \(String(describing: beaconBaseUrl))")
+                Log.shared.d("User Beacon events pointing to \(String(describing: userBeaconUrl))")
+                Log.shared.d("Player Beacon events pointing to \(String(describing: playerBeaconUrl))")
             }
             
         }
@@ -47,9 +49,8 @@ final public class VLBeacon {
     
     public var disabledTracking: Bool = false
     
-
-    public func startSyncBeaconEvents() {
-        self.setupConfiguration()
+    public func startSyncBeaconEvents(userBeaconUrl: String?, playerBeaconUrl: String?) {
+        self.setupConfiguration(userBeaconUrl: userBeaconUrl, playerBeaconUrl: playerBeaconUrl)
         
         let sharedSyncManager = BeaconSyncManager.sharedInstance
         
@@ -96,12 +97,6 @@ final public class VLBeacon {
 
 extension VLBeacon{
     
-    func getBeaconBaseUrl() -> String? {
-        guard let bundlePath = Bundle.main.path(forResource: "SiteConfig", ofType: "plist"),
-              let dict = NSDictionary.init(contentsOfFile: bundlePath),
-              let apiEndpoint = dict["BeaconApiUrl"] as? String else { return nil }
-        return apiEndpoint
-    }
     
     private func getDebugLogger() -> Bool? {
         guard let bundlePath = Bundle.main.path(forResource: "SiteConfig", ofType: "plist"),
@@ -110,8 +105,10 @@ extension VLBeacon{
         return loggerValue
     }
     
-    private func setupConfiguration() {
-        beaconBaseUrl = getBeaconBaseUrl()
+    private func setupConfiguration(userBeaconUrl: String?, playerBeaconUrl: String?) {
+        self.userBeaconUrl = userBeaconUrl
+        self.playerBeaconUrl = playerBeaconUrl
+        
         environment = getEnvironment()
         debugLogs = getDebugLogger()
     }

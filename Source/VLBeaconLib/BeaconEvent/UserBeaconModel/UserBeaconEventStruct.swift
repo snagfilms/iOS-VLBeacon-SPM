@@ -71,10 +71,10 @@ public struct UserBeaconEventStruct {
 extension UserBeaconEventStruct: BeaconEventBodyProtocol {
     
     public func triggerEvents(authToken: String, beaconInstance: VLBeacon) {
-        guard let beaconBaseURL = beaconInstance.getBeaconBaseUrl() else { return }
+        guard let beaconBaseURL = beaconInstance.userBeaconUrl else { return }
         
         DispatchQueue.global(qos: .utility).async {
-            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL + APIUrlEndPoint.userBeacon.rawValue)
+            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL)
         }
     }
     

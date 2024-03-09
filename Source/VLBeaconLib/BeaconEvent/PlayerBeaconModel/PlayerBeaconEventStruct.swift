@@ -172,10 +172,10 @@ public struct PlayerBeaconEventStruct {
 extension PlayerBeaconEventStruct: BeaconEventBodyProtocol {
     
     public func triggerEvents(authToken: String, beaconInstance: VLBeacon) {
-        guard let beaconBaseURL = beaconInstance.getBeaconBaseUrl() else { return }
+        guard let beaconBaseURL = beaconInstance.playerBeaconUrl else { return }
         
         DispatchQueue.global(qos: .utility).async {
-            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL + APIUrlEndPoint.playerBeacon.rawValue)
+            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL)
         }
     }
     
