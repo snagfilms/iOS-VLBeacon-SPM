@@ -47,14 +47,12 @@ final public class VLBeacon {
     }
     
     
-    public var disabledTracking: Bool = false
-    
     public func startSyncBeaconEvents(userBeaconUrl: String?, playerBeaconUrl: String?) {
         self.setupConfiguration(userBeaconUrl: userBeaconUrl, playerBeaconUrl: playerBeaconUrl)
         
         let sharedSyncManager = BeaconSyncManager.sharedInstance
         
-        if NetworkStatus.sharedInstance.isNetworkAvailable() && !disabledTracking {
+        if NetworkStatus.sharedInstance.isNetworkAvailable() {
             if let authToken = authorizationToken {
                 sharedSyncManager.startSyncingTheEvents(vlBeacon: self, authenticationToken: authToken, withSuccess: {(_ success: Bool) -> Void in
                 })
@@ -63,7 +61,7 @@ final public class VLBeacon {
     }
     
     public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol) {
-        guard let authToken = self.authorizationToken, !disabledTracking else { return }
+        guard let authToken = self.authorizationToken else { return }
         
         guard let uID = tokenIdentity?.userId as? String else { return }
         let anonymousId = tokenIdentity?.anonymousId as? String
