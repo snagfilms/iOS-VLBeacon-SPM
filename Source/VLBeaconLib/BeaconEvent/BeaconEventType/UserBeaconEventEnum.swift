@@ -67,6 +67,11 @@ public enum UserBeaconEventEnum : BeaconEventNameProtocol, Equatable{
     case removeAllDevices
     case removeDevice
     
+    case scheduleFilter
+    case addPersonalization
+    case personalizationEditPopup
+    case personalizationPopup
+    
     case custom(eventName: String)
     
     public func getBeaconEventNameString() -> String {
@@ -155,6 +160,15 @@ public enum UserBeaconEventEnum : BeaconEventNameProtocol, Equatable{
             return "remove-all-devices"
         case .removeDevice:
             return "remove-device"
+        case .scheduleFilter:
+            return "schedule-filter"
+        case .addPersonalization:
+            return "add-personalization"
+        case .personalizationEditPopup:
+            return "personalization-edit-pop-up"
+        case .personalizationPopup:
+            return "personalization-pop-up"
+            
         case .custom(let eventName):
             return eventName
         }
