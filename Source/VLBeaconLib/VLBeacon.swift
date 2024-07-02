@@ -16,20 +16,31 @@ final public class VLBeacon {
     }
     
     private let bundleIdentifier = "com.viewlift.beacon"
-    
-    public var tokenIdentity: TokenIdentity?
-    
     internal var userBeaconUrl : String?
     internal var playerBeaconUrl : String?
     
     public var tveProvider: String?
     
     public var environment: String = ""
-    
-    public var authorizationToken : String? {
+    private var _tokenIdentity: TokenIdentity?
+
+    private let queue = DispatchQueue(label: "com.viewlift.VLBeacon", attributes: .concurrent)
+    public var tokenIdentity: TokenIdentity? {
+        queue.sync {
+            return _tokenIdentity
+        }
+    }
+
+    public  var authorizationToken: String? {
         didSet {
-            guard let authorizationToken else { return }
-            self.tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: authorizationToken)
+            queue.async(flags: .barrier) { [weak self] in
+                guard let self = self else { return }
+                if let token = self.authorizationToken {
+                    self._tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: token)
+                } else {
+                    self._tokenIdentity = nil
+                }
+            }
         }
     }
     
