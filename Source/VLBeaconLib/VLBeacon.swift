@@ -12,45 +12,26 @@ final public class VLBeacon {
     }
     
     private init() {
-        print("VLBeacon init")
+        debugPrint("VLBeacon init")
     }
     
     private let bundleIdentifier = "com.viewlift.beacon"
+    
+    public var tokenIdentity: TokenIdentity?
+    
     internal var userBeaconUrl : String?
     internal var playerBeaconUrl : String?
     
     public var tveProvider: String?
+    
     public var environment: String = ""
     
-    private var _tokenIdentity: TokenIdentity?
-    
-    public var tokenIdentity: TokenIdentity? {
-        return _tokenIdentity
-    }
-    
-    private var _authorizationToken: String? // Backing storage for thread-safe access
-    private let tokenAccessQueue = DispatchQueue(label: "com.viewlift.VLBeacon.tokenAccessQueue") //
-    
-    public var authorizationToken: String? {
-        get {
-            // Synchronously read the token within the serial queue
-            return tokenAccessQueue.sync { _authorizationToken }
-        }
-        set {
-            // Synchronously write the token within the serial queue
-            tokenAccessQueue.sync {
-                _authorizationToken = newValue
-                
-                if let token = _authorizationToken {
-                    self._tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: token)
-                } else {
-                    self._tokenIdentity = nil
-                }
-            }
+    public var authorizationToken : String? {
+        didSet {
+            guard let authorizationToken else { return }
+            self.tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: authorizationToken)
         }
     }
-    
-    
     
     public var debugLogs: Bool? = false {
         didSet{
