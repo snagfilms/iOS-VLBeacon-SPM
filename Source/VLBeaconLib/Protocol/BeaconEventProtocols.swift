@@ -37,6 +37,9 @@ extension StructToDictionaryProtocol {
 			if let value = value as? [String: Any] {
                 dict[label.lowercased()] = value
             }
+            else if let value = value as? [Any] {
+                dict[label.lowercased()] = value
+            }
             else if let value = value as? [String] {
                 dict[label.lowercased()] = value
             }
