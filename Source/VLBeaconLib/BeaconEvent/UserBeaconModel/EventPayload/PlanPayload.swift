@@ -22,8 +22,12 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
     var currencyCode: String?
     var orderTotalAmount: String?
     var transactionId: String?
+    var monetizationType: String?
+    var pgId: String?
+    var pgName: String?
+    var modType: String?
     
-    public init(planId: String? = nil, planName: String? = nil, planDesc: String? = nil, planType: String? = nil, additionalData: [String : String]? = nil, type: [String]? = nil, stepsCompleted: [String]? = nil, location: String? = nil, status: [Any]? = nil, paymentMethod: String? = nil, currencyCode: String? = nil, orderTotalAmount: String? = nil, transactionId: String? = nil) {
+    public init(planId: String? = nil, planName: String? = nil, planDesc: String? = nil, planType: String? = nil, additionalData: [String : String]? = nil, type: [String]? = nil, stepsCompleted: [String]? = nil, location: String? = nil, status: [Any]? = nil, paymentMethod: String? = nil, currencyCode: String? = nil, orderTotalAmount: String? = nil, transactionId: String? = nil, monetizationType: String? = nil, pgId: String? = nil, pgName: String? = nil, modType: String? = nil) {
         self.planId = planId
         self.planName = planName
         self.planDesc = planDesc
@@ -37,5 +41,9 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
         self.currencyCode = currencyCode
         self.orderTotalAmount = orderTotalAmount
         self.transactionId = transactionId
+        self.monetizationType = monetizationType
+        self.pgId = pgId
+        self.pgName = pgName
+        self.modType = modType
     }
 }
