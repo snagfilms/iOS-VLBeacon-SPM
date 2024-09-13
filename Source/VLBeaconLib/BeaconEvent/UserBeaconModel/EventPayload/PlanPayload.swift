@@ -7,9 +7,14 @@
 
 import Foundation
 
-public struct Status: Codable{
-    var errorCode: String
-    var message: String
+public struct Status: BeaconEventPayloadProtocol{
+    var errorCode: String?
+    var message: String?
+    
+    public init(errorCode: String? = nil, message: String? = nil) {
+        self.errorCode = errorCode
+        self.message = message
+    }
 }
 
 public struct PlanPayload: BeaconEventPayloadProtocol {
