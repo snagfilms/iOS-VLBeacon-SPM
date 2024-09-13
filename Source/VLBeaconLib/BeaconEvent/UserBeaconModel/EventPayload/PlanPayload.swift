@@ -7,6 +7,11 @@
 
 import Foundation
 
+struct Status: Codable{
+    var errorCode: String
+    var message: String
+}
+
 public struct PlanPayload: BeaconEventPayloadProtocol {
     
     var planId: String?
@@ -17,7 +22,7 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
     var additionalData: [String: Any]?
     var type: [String]?
     var stepsCompleted: [String]?
-    var status: [Any]?
+    var status: Status?
     var paymentMethod: String?
     var currencyCode: String?
     var orderTotalAmount: String?
@@ -29,7 +34,7 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
     var tveProvider: String?
     var mvpdProvider: String?
     
-    public init(planId: String? = nil, planName: String? = nil, planDesc: String? = nil, planType: String? = nil, additionalData: [String : String]? = nil, type: [String]? = nil, stepsCompleted: [String]? = nil, location: String? = nil, status: [Any]? = nil, paymentMethod: String? = nil, currencyCode: String? = nil, orderTotalAmount: String? = nil, transactionId: String? = nil, monetizationType: String? = nil, pgId: String? = nil, pgName: String? = nil, modType: String? = nil, tveProvider: String? = nil, mvpdProvider: String? = nil) {
+    public init(planId: String? = nil, planName: String? = nil, planDesc: String? = nil, planType: String? = nil, additionalData: [String : String]? = nil, type: [String]? = nil, stepsCompleted: [String]? = nil, location: String? = nil, status: Status? = nil, paymentMethod: String? = nil, currencyCode: String? = nil, orderTotalAmount: String? = nil, transactionId: String? = nil, monetizationType: String? = nil, pgId: String? = nil, pgName: String? = nil, modType: String? = nil, tveProvider: String? = nil, mvpdProvider: String? = nil) {
         self.planId = planId
         self.planName = planName
         self.planDesc = planDesc
