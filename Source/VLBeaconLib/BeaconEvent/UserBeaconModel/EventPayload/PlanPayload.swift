@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct Status: Codable{
+public struct Status: Codable{
     var errorCode: String
     var message: String
 }
