@@ -38,8 +38,9 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
     var modType: String?
     var tveProvider: String?
     var mvpdProvider: String?
+    var modID: String?
     
-    public init(planId: String? = nil, planName: String? = nil, planDesc: String? = nil, planType: String? = nil, additionalData: [String : String]? = nil, type: [String]? = nil, stepsCompleted: [String]? = nil, location: String? = nil, status: Status? = nil, paymentMethod: String? = nil, currencyCode: String? = nil, orderTotalAmount: String? = nil, transactionId: String? = nil, monetizationType: String? = nil, pgId: String? = nil, pgName: String? = nil, modType: String? = nil, tveProvider: String? = nil, mvpdProvider: String? = nil) {
+    public init(planId: String? = nil, planName: String? = nil, planDesc: String? = nil, planType: String? = nil, additionalData: [String : String]? = nil, type: [String]? = nil, stepsCompleted: [String]? = nil, location: String? = nil, status: Status? = nil, paymentMethod: String? = nil, currencyCode: String? = nil, orderTotalAmount: String? = nil, transactionId: String? = nil, monetizationType: String? = nil, pgId: String? = nil, pgName: String? = nil, modType: String? = nil, tveProvider: String? = nil, mvpdProvider: String? = nil, modID: String? = nil) {
         self.planId = planId
         self.planName = planName
         self.planDesc = planDesc
@@ -59,5 +60,6 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
         self.modType = modType
         self.tveProvider = tveProvider
         self.mvpdProvider = mvpdProvider
+        self.modID = modID
     }
 }
