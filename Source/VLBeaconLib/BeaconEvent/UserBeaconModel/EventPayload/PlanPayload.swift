@@ -45,7 +45,9 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
     var modID: String?
     var url: String?
     var pageUrl: String?
-    
+    var landingPage: String?
+    var error: String?
+    var message: String?
 
     
     public init(planId: String? = nil,
@@ -73,7 +75,10 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
                 mvpdProvider: String? = nil,
                 modID: String? = nil,
                 url: String? = nil,
-                pageUrl: String? = nil) {
+                pageUrl: String? = nil,
+                landingPage: String? = nil,
+                error: String? = nil,
+                message: String? = nil) {
         self.planId = planId
         self.planName = planName
         self.planDesc = planDesc
@@ -100,5 +105,8 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
         self.modID = modID
         self.url = url
         self.pageUrl = pageUrl
+        self.landingPage = landingPage
+        self.message = message
+        self.error = error
     }
 }
