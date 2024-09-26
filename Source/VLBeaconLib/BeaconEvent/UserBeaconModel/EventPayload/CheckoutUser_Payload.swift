@@ -13,6 +13,7 @@ public struct CheckoutUserPayload: BeaconEventPayloadProtocol {
     var email: String?
     var phoneNumber: String?
     var registeredVia: String?
+    var loginVia: String?
     var consentStatus: String?
     var error: String?
     var message: String?
@@ -24,6 +25,7 @@ public struct CheckoutUserPayload: BeaconEventPayloadProtocol {
                 email: String? = nil,
                 phoneNumber: String? = nil,
                 registeredVia: String? = nil,
+                loginVia: String? = nil,
                 consentStatus: String? = nil,
                 error: String? = nil,
                 message: String? = nil,
@@ -34,6 +36,7 @@ public struct CheckoutUserPayload: BeaconEventPayloadProtocol {
         self.email = email
         self.phoneNumber = phoneNumber
         self.registeredVia = registeredVia
+        self.loginVia = loginVia
         self.consentStatus = consentStatus
         self.error = error
         self.message = message
