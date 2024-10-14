@@ -53,6 +53,7 @@ public struct PlayerBeaconEventStruct {
     var siteid: String?
     var source: String?
     var tveProvider: String?
+    var anonymousuid: String?
     
     var additionalData: [String: Any]?
     

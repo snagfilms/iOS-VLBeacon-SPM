@@ -71,6 +71,7 @@ final public class VLBeacon {
             if (anonymousId ?? "").isEmpty == false {
                 event.profid = "guest-user"
                 event.uid = deviceid
+                event.anonymousuid = anonymousId
             } else {
                 event.profid = uID
             }
@@ -82,6 +83,7 @@ final public class VLBeacon {
             if (anonymousId ?? "").isEmpty == false {
                 eventUser.profid = "guest-user"
                 eventUser.uid = deviceid
+                eventUser.anonymousuid = anonymousId
             } else {
                 eventUser.profid = uID
             }
