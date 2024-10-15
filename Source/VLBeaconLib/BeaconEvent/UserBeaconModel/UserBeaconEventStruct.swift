@@ -21,8 +21,8 @@ public struct UserBeaconEventStruct {
     var url: String!
     var appversion: String!
     var source: String?
-    var eventData: [String: Any]?
-    var additionalData: [String: Any]?
+    var eventdata: [String: Any]?
+    var additionaldata: [String: Any]?
     var anonymousuid: String?
     
     public init(eventName: UserBeaconEventEnum, userId: String? = nil, profileId: String? = nil, siteId: String? = nil, pfm: String? = nil, etstamp: String? = nil, environment: String? = nil, appversion: String? = nil, source: String?, eventData: BeaconEventPayloadProtocol? = nil, additionalData: [String : Any]? = nil, tokenIdentity: TokenIdentity?) {
@@ -62,9 +62,9 @@ public struct UserBeaconEventStruct {
         
         self.etstamp = Utility.sharedInstance.getCurrentTimestampInGMT()
         
-        self.eventData = eventData?.toDictionary()
+        self.eventdata = eventData?.toDictionary()
         
-        self.additionalData = additionalData
+        self.additionaldata = additionalData
         
     }
 }
