@@ -82,9 +82,9 @@ extension UserBeaconEventStruct: BeaconEventBodyProtocol {
     public func addBeaconInDBQuery() -> String? {
         var queryToAddBeaconEvent: String?
         
-        let additionalDataString: String? = additionalData?.jsonString()
+        let additionalDataString: String? = additionaldata?.jsonString()
         
-        let eventDataString: String? = eventData?.jsonString()
+        let eventDataString: String? = eventdata?.jsonString()
         
         queryToAddBeaconEvent = "insert into \(BeaconDBConstants().USERTABLENAME) (ename, uid, profid, siteid, pfm, etstamp, environment, deviceid, ref, url, appversion, source, eventData, additionalData) values('\(self.ename )','\(self.uid ?? "")','\(profid ?? "")','\(self.siteid ?? "")','\(self.pfm ?? "")','\(self.etstamp ?? "")','\(self.environment ?? "")','\(self.deviceid ?? "")','\(self.ref ?? "")','\(self.url ?? "")','\(self.appversion ?? "")','\(self.source ?? "")','\(eventDataString ?? "")','\(additionalDataString ?? "")')"
         
