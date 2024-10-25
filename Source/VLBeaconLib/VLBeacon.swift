@@ -91,7 +91,7 @@ final public class VLBeacon {
                 eventUser.profid = uID
             }
             if let userMergedForAnonymousId {
-                event.anonymousuid = userMergedForAnonymousId
+                eventUser.anonymousuid = userMergedForAnonymousId
             }
             eventUser.environment = environment
             eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
@@ -99,7 +99,6 @@ final public class VLBeacon {
     }
     
 }
-
 extension VLBeacon{
     
     
