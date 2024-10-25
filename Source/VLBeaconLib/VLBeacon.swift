@@ -60,7 +60,7 @@ final public class VLBeacon {
         }
     }
     
-    public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol) {
+    public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol, userMergedForAnonymousId: String? = nil) {
         guard let authToken = self.authorizationToken else { return }
         
         guard let uID = tokenIdentity?.userId as? String else { return }
@@ -75,6 +75,9 @@ final public class VLBeacon {
             } else {
                 event.profid = uID
             }
+            if let userMergedForAnonymousId {
+                event.anonymousuid = userMergedForAnonymousId
+            }
             event.environment = environment
             
             event.tveProvider = tveProvider
@@ -87,7 +90,9 @@ final public class VLBeacon {
             } else {
                 eventUser.profid = uID
             }
-            
+            if let userMergedForAnonymousId {
+                event.anonymousuid = userMergedForAnonymousId
+            }
             eventUser.environment = environment
             eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
         }
