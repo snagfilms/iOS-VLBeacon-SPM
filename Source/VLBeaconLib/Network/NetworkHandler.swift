@@ -44,7 +44,6 @@ class NetworkHandler: NSObject {
         request.httpBody = try! JSONSerialization.data(withJSONObject: parameters)
         requestHeaders?["User-Agent"] = Utility.sharedInstance.getDeviceUserAgent()
         request.allHTTPHeaderFields = requestHeaders
-        getCURLRequest(request: request)
         
         let task = URLSession.shared.dataTask(with: request) {
             (data, response, error) in
@@ -74,32 +73,5 @@ class NetworkHandler: NSObject {
             }
         }
         task.resume()
-    }
-    
-    private func getCURLRequest(request: URLRequest) {
-       
-            var curlString = "THE CURL REQUEST:\n"
-            curlString += "curl -X \(request.httpMethod!) \\\n"
-
-            request.allHTTPHeaderFields?.forEach({ (key, value) in
-                let headerKey = escapeQuotesInString(str: key)
-                let headerValue = escapeQuotesInString(str: value)
-                curlString += " -H \'\(headerKey): \(headerValue)\' \n"
-            })
-
-            curlString += " \(request.url!.absoluteString) \\\n"
-
-            if let body = request.httpBody {
-                if let str = String(data: body, encoding: String.Encoding.utf8) {
-                    let bodyDataString = escapeQuotesInString(str: str)
-                    curlString += " -d \'\(bodyDataString)\'"
-                }
-            }
-        
-        Log.shared.s("Beacon Curl Request ->> \(curlString)")
-        
-    }
-    private func escapeQuotesInString(str:String) -> String {
-        return str.replacingOccurrences(of: "\\", with: "")
     }
 }
