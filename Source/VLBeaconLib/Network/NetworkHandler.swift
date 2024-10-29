@@ -44,6 +44,7 @@ class NetworkHandler: NSObject {
         request.httpBody = try! JSONSerialization.data(withJSONObject: parameters)
         requestHeaders?["User-Agent"] = Utility.sharedInstance.getDeviceUserAgent()
         request.allHTTPHeaderFields = requestHeaders
+        self.getCURLRequest(request: request)
         
         let task = URLSession.shared.dataTask(with: request) {
             (data, response, error) in
@@ -73,5 +74,28 @@ class NetworkHandler: NSObject {
             }
         }
         task.resume()
+    }
+    
+    private func getCURLRequest(request: URLRequest) {
+        #if DEBUG
+            var curlString = "THE CURL REQUEST:\n"
+            curlString += "curl -X \(request.httpMethod!) \\\n"
+
+            request.allHTTPHeaderFields?.forEach({ (key, value) in
+                let headerKey = self.escapeQuotesInString(str: key)
+                let headerValue = self.escapeQuotesInString(str: value)
+                curlString += " -H \'\(headerKey): \(headerValue)\' \n"
+            })
+
+            curlString += " \(request.url!.absoluteString) \\\n"
+
+            if let body = request.httpBody {
+                if let str = String(data: body, encoding: String.Encoding.utf8) {
+                    let bodyDataString = self.escapeQuotesInString(str: str)
+                    curlString += " -d \'\(bodyDataString)\'"
+                }
+            }
+            print(curlString)
+        #endif
     }
 }
