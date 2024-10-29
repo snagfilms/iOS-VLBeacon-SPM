@@ -90,7 +90,7 @@ class NetworkHandler: NSObject {
                 if let aposString = item["apos"] as? String, let apos = Int(aposString) {
                     item["apos"] = apos
                 }
-                if let vposString = item["vpos"] as? String, let vpos = Int(aposString) {
+                if let vposString = item["vpos"] as? String, let vpos = Int(vposString) {
                     item["vpos"] = vpos
                 }
 
