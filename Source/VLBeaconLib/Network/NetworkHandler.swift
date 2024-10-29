@@ -96,7 +96,7 @@ class NetworkHandler: NSObject {
                 }
             }
         
-        Log.shared.s("Beacon Curl Request ->> \(curlString) >>>Done")
+        Log.shared.s("Beacon Curl Request ->> \(curlString)")
         
     }
     private func escapeQuotesInString(str:String) -> String {
