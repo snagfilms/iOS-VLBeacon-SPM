@@ -90,6 +90,9 @@ class NetworkHandler: NSObject {
                 if let aposString = item["apos"] as? String, let apos = Int(aposString) {
                     item["apos"] = apos
                 }
+                if let vposString = item["vpos"] as? String, let vpos = Int(aposString) {
+                    item["vpos"] = vpos
+                }
 
                 if let bitrateString = item["bitrate"] as? String, let bitrate = Int(bitrateString) {
                     item["bitrate"] = bitrate
