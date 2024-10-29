@@ -82,8 +82,8 @@ class NetworkHandler: NSObject {
             curlString += "curl -X \(request.httpMethod!) \\\n"
 
             request.allHTTPHeaderFields?.forEach({ (key, value) in
-                let headerKey = self.escapeQuotesInString(str: key)
-                let headerValue = self.escapeQuotesInString(str: value)
+                let headerKey = escapeQuotesInString(str: key)
+                let headerValue = escapeQuotesInString(str: value)
                 curlString += " -H \'\(headerKey): \(headerValue)\' \n"
             })
 
@@ -91,12 +91,15 @@ class NetworkHandler: NSObject {
 
             if let body = request.httpBody {
                 if let str = String(data: body, encoding: String.Encoding.utf8) {
-                    let bodyDataString = self.escapeQuotesInString(str: str)
+                    let bodyDataString = escapeQuotesInString(str: str)
                     curlString += " -d \'\(bodyDataString)\'"
                 }
             }
         
         Log.shared.s("Beacon Curl Request ->> \(curlString)")
         
+    }
+    private func escapeQuotesInString(str:String) -> String {
+        return str.replacingOccurrences(of: "\\", with: "")
     }
 }
