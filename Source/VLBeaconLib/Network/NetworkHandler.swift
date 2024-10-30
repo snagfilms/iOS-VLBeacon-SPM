@@ -97,6 +97,9 @@ class NetworkHandler: NSObject {
                 if let bitrateString = item["bitrate"] as? String, let bitrate = Int(bitrateString) {
                     item["bitrate"] = bitrate
                 }
+                if let firstFrameString = item["ttFirstFrame"] as? String, let firstFrame = Int(firstFrameString) {
+                    item["ttFirstFrame"] = firstFrame
+                }
 
                 if let resolutionWidthString = item["resolutionWidth"] as? String, let resolutionWidth = Int(resolutionWidthString) {
                     item["resolutionWidth"] = resolutionWidth
