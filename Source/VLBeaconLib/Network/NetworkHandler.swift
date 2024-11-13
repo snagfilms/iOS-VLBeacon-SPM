@@ -105,7 +105,7 @@ class NetworkHandler: NSObject {
                     item["resolutionWidth"] = resolutionWidth
                 }
 
-                if let resolutionHeightString = item["resolutionHeight"] as? String, let resolutionHeight Float(resolutionHeightString) {
+                if let resolutionHeightString = item["resolutionHeight"] as? String, let resolutionHeight = Float(resolutionHeightString) {
                     item["resolutionHeight"] = resolutionHeight
                 }
 
