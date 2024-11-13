@@ -101,11 +101,11 @@ class NetworkHandler: NSObject {
                     item["ttFirstFrame"] = firstFrame
                 }
 
-                if let resolutionWidthString = item["resolutionWidth"] as? String, let resolutionWidth = Int(resolutionWidthString) {
+                if let resolutionWidthString = item["resolutionWidth"] as? String, let resolutionWidth = Float(resolutionWidthString) {
                     item["resolutionWidth"] = resolutionWidth
                 }
 
-                if let resolutionHeightString = item["resolutionHeight"] as? String, let resolutionHeight = Int(resolutionHeightString) {
+                if let resolutionHeightString = item["resolutionHeight"] as? String, let resolutionHeight Float(resolutionHeightString) {
                     item["resolutionHeight"] = resolutionHeight
                 }
 
