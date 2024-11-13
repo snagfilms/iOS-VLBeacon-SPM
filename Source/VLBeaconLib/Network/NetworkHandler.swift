@@ -97,20 +97,20 @@ class NetworkHandler: NSObject {
                 if let bitrateString = item["bitrate"] as? String, let bitrate = Int(bitrateString) {
                     item["bitrate"] = bitrate
                 }
-                if let firstFrameString = item["ttFirstFrame"] as? String, let firstFrame = Int(firstFrameString) {
-                    item["ttFirstFrame"] = firstFrame
+                if let firstFrameString = item["ttfirstframe"] as? String, let firstFrame = Int(firstFrameString) {
+                    item["ttfirstframe"] = firstFrame
                 }
 
-                if let resolutionWidthString = item["resolutionWidth"] as? String, let resolutionWidth = Float(resolutionWidthString) {
-                    item["resolutionWidth"] = resolutionWidth
+                if let resolutionWidthString = item["resolutionwidth"] as? String, let resolutionWidth = Float(resolutionWidthString) {
+                    item["resolutionwidth"] = resolutionWidth
                 }
 
-                if let resolutionHeightString = item["resolutionHeight"] as? String, let resolutionHeight = Float(resolutionHeightString) {
-                    item["resolutionHeight"] = resolutionHeight
+                if let resolutionHeightString = item["resolutionheight"] as? String, let resolutionHeight = Float(resolutionHeightString) {
+                    item["resolutionheight"] = resolutionHeight
                 }
 
-                if let connectionSpeedString = item["connectionSpeed"] as? String, let connectionSpeed = Int(connectionSpeedString) {
-                    item["connectionSpeed"] = connectionSpeed
+                if let connectionSpeedString = item["connectionspeed"] as? String, let connectionSpeed = Int(connectionSpeedString) {
+                    item["connectionspeed"] = connectionSpeed
                 }
 
                 convertedData[index] = item
