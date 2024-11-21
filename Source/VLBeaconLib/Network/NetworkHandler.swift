@@ -91,7 +91,7 @@ class NetworkHandler: NSObject {
             }
 
             // Float conversion
-            let floatKeys = ["resolutionwidth", "resolutionheight"]
+            let floatKeys = ["resolutionwidth", "resolutionheight", "resolutionWidth", "resolutionHeight"]
             for key in floatKeys {
                 if let stringValue = item[key] as? String, let floatValue = Float(stringValue) {
                     item[key] = floatValue
