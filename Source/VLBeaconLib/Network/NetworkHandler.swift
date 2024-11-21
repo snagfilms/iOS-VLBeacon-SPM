@@ -76,48 +76,33 @@ class NetworkHandler: NSObject {
         }
         task.resume()
     }
-    
     private func convertParameters(in data: [[String: Any]]) -> [[String: Any]] {
-            var convertedData = data
+        var convertedData = data
 
-            for index in convertedData.indices {
-                var item = convertedData[index]
+        for index in convertedData.indices {
+            var item = convertedData[index]
 
-                if let durationString = item["duration"] as? String, let duration = Int(durationString) {
-                    item["duration"] = duration
+            // Int conversion
+            let intKeys = ["duration", "apos", "vpos", "bitrate", "ttfirstframe", "connectionspeed"]
+            for key in intKeys {
+                if let stringValue = item[key] as? String, let intValue = Int(stringValue) {
+                    item[key] = intValue
                 }
-
-                if let aposString = item["apos"] as? String, let apos = Int(aposString) {
-                    item["apos"] = apos
-                }
-                if let vposString = item["vpos"] as? String, let vpos = Int(vposString) {
-                    item["vpos"] = vpos
-                }
-
-                if let bitrateString = item["bitrate"] as? String, let bitrate = Int(bitrateString) {
-                    item["bitrate"] = bitrate
-                }
-                if let firstFrameString = item["ttfirstframe"] as? String, let firstFrame = Int(firstFrameString) {
-                    item["ttfirstframe"] = firstFrame
-                }
-
-                if let resolutionWidthString = item["resolutionwidth"] as? String, let resolutionWidth = Float(resolutionWidthString) {
-                    item["resolutionwidth"] = resolutionWidth
-                }
-
-                if let resolutionHeightString = item["resolutionheight"] as? String, let resolutionHeight = Float(resolutionHeightString) {
-                    item["resolutionheight"] = resolutionHeight
-                }
-
-                if let connectionSpeedString = item["connectionspeed"] as? String, let connectionSpeed = Int(connectionSpeedString) {
-                    item["connectionspeed"] = connectionSpeed
-                }
-
-                convertedData[index] = item
             }
 
-            return convertedData
+            // Float conversion
+            let floatKeys = ["resolutionwidth", "resolutionheight"]
+            for key in floatKeys {
+                if let stringValue = item[key] as? String, let floatValue = Float(stringValue) {
+                    item[key] = floatValue
+                }
+            }
+
+            convertedData[index] = item
         }
+
+        return convertedData
+    }
         
         
         private func getCURLRequest(request: URLRequest) {
