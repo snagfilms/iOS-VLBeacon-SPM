@@ -117,8 +117,8 @@ public struct PlayerBeaconEventStruct {
         }
         
         if let res = resolution {
-            self.resolutionHeight = String(describing: Int(res.height))
-            self.resolutionWidth = String(describing: Int(res.width))
+            self.resolutionHeight = String(describing: Int(res.height  * UIScreen.main.scale))
+            self.resolutionWidth = String(describing: Int(res.width  * UIScreen.main.scale))
         } else {
             self.resolutionHeight = "0"
             self.resolutionWidth = "0"
