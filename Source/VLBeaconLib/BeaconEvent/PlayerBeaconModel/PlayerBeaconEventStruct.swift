@@ -117,7 +117,7 @@ public struct PlayerBeaconEventStruct {
             self.connectionSpeed = String(describing: connectionSpeed)
         }
         
-        if /*let bitrate, */let res = resolution { //self.getResolutionFromBitrate(bitrate) {
+        if let bitrate, let res = self.getResolutionFromBitrate(bitrate) {
             self.resolutionHeight = String(describing: Int(res.height))
             self.resolutionWidth = String(describing: Int(res.width))
         } else {
