@@ -36,8 +36,8 @@ public struct PlayerBeaconEventStruct {
     var ttFirstFrame: String?
     var bitrate: String?
     var connectionSpeed: String?
-    var resolutionHeight: String?
-    var resolutionWidth: String?
+    var resolutionheight: String?
+    var resolutionwidth: String?
     var bufferHealth: String?
     var plid: String?
     var fcid: String?
@@ -118,11 +118,11 @@ public struct PlayerBeaconEventStruct {
         }
         
         if let bitrate, let res = self.getResolutionFromBitrate(bitrate) {
-            self.resolutionHeight = String(describing: Int(res.height))
-            self.resolutionWidth = String(describing: Int(res.width))
+            self.resolutionheight = String(describing: Int(res.height))
+            self.resolutionwidth = String(describing: Int(res.width))
         } else {
-            self.resolutionHeight = "0"
-            self.resolutionWidth = "0"
+            self.resolutionheight = "0"
+            self.resolutionwidth = "0"
         }
         
         
@@ -229,7 +229,7 @@ extension PlayerBeaconEventStruct: BeaconEventBodyProtocol {
         
         let customDataString: String? = self.additionaldata?.jsonString()
         
-        queryToAddBeaconEvent = "insert into \(BeaconDBConstants().PLAYERTABLENAME)  (aid, cid, pfm, vid, uid, profid, pa, player, environment, media_type, tstampoverride , stream_id, dp1, dp2, dp3, dp4, dp5, ref, apos, apod, vpos, url, embedUrl, ttfirstframe, bitrate, connectionspeed, resolutionheight , resolutionwidth, bufferhealth, plid, fcid, seriesid, seasonid, seasonnumber, tstamp, subscription_type, mvpdprovider, guid, appversion, duration, deviceid, siteid, source, tveprovider, additionalData ) values('\(self.aid ?? "")','\(self.cid ?? "")','\(self.pfm ?? "")','\(self.vid ?? "")','\(self.uid ?? "")','\(self.profid ?? "")','\(self.pa ?? "")','\(self.player ?? "")','\(self.environment ?? "")','\(self.media_type ?? "")','\(self.tstampoverride ?? "")','\(self.stream_id ?? "")','\(self.dp1 ?? "")','\(self.dp2 ?? "")','\(self.dp3 ?? "")','\(self.dp4 ?? "")','\(self.dp5 ?? "")','\(self.ref ?? "")','\(self.apos ?? "")','\(self.apod ?? "")','\(self.vpos ?? "")','\(self.url ?? "")','\(self.embedUrl ?? "")','\(self.ttFirstFrame ?? "")','\(self.bitrate ?? "")','\(self.connectionSpeed ?? "")','\(self.resolutionHeight ?? "")','\(self.resolutionWidth ?? "")','\(self.bufferHealth ?? "")','\(self.plid ?? "")','\(self.fcid ?? "")','\(self.seriesid ?? "")','\(self.seasonid ?? "")','\(self.seasonnumber ?? "")','\(self.tstamp ?? "")','\(self.subscription_type ?? "")','\(self.mvpdprovider ?? "")','\(self.guid ?? "")','\(self.appversion ?? "")','\(self.duration ?? "")','\(self.deviceid ?? "")','\(self.siteid ?? "")','\(self.source ?? "")','\(self.tveProvider ?? "")','\(customDataString ?? "")')"
+        queryToAddBeaconEvent = "insert into \(BeaconDBConstants().PLAYERTABLENAME)  (aid, cid, pfm, vid, uid, profid, pa, player, environment, media_type, tstampoverride , stream_id, dp1, dp2, dp3, dp4, dp5, ref, apos, apod, vpos, url, embedUrl, ttfirstframe, bitrate, connectionspeed, resolutionheight , resolutionwidth, bufferhealth, plid, fcid, seriesid, seasonid, seasonnumber, tstamp, subscription_type, mvpdprovider, guid, appversion, duration, deviceid, siteid, source, tveprovider, additionalData ) values('\(self.aid ?? "")','\(self.cid ?? "")','\(self.pfm ?? "")','\(self.vid ?? "")','\(self.uid ?? "")','\(self.profid ?? "")','\(self.pa ?? "")','\(self.player ?? "")','\(self.environment ?? "")','\(self.media_type ?? "")','\(self.tstampoverride ?? "")','\(self.stream_id ?? "")','\(self.dp1 ?? "")','\(self.dp2 ?? "")','\(self.dp3 ?? "")','\(self.dp4 ?? "")','\(self.dp5 ?? "")','\(self.ref ?? "")','\(self.apos ?? "")','\(self.apod ?? "")','\(self.vpos ?? "")','\(self.url ?? "")','\(self.embedUrl ?? "")','\(self.ttFirstFrame ?? "")','\(self.bitrate ?? "")','\(self.connectionSpeed ?? "")','\(self.resolutionheight ?? "")','\(self.resolutionwidth ?? "")','\(self.bufferHealth ?? "")','\(self.plid ?? "")','\(self.fcid ?? "")','\(self.seriesid ?? "")','\(self.seasonid ?? "")','\(self.seasonnumber ?? "")','\(self.tstamp ?? "")','\(self.subscription_type ?? "")','\(self.mvpdprovider ?? "")','\(self.guid ?? "")','\(self.appversion ?? "")','\(self.duration ?? "")','\(self.deviceid ?? "")','\(self.siteid ?? "")','\(self.source ?? "")','\(self.tveProvider ?? "")','\(customDataString ?? "")')"
         
         return queryToAddBeaconEvent
         
