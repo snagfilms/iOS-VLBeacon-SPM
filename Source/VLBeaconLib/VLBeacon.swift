@@ -60,6 +60,14 @@ final public class VLBeacon {
         }
     }
     
+    public func updatePlayerBeaconEndpoint(_ playerEndpoint: String) {
+        if playerBeaconUrl == nil, (playerBeaconUrl?.isEmpty ?? true),
+           !playerEndpoint.isEmpty {
+            playerBeaconUrl = playerEndpoint
+            environment = getEnvironment()
+        }
+    }
+    
     public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol, userMergedForAnonymousId: String? = nil) {
         guard let authToken = self.authorizationToken else { return }
         
@@ -121,7 +129,7 @@ extension VLBeacon{
     func getEnvironment() -> String {
         guard let bundlePath = Bundle.main.path(forResource: "SiteConfig", ofType: "plist"),
               let dict = NSDictionary.init(contentsOfFile: bundlePath),
-              let environment = dict["Env"] as? String else { return "" }
+              let environment = dict["Env"] as? String else { return "production" }
         
         switch environment.lowercased() {
         case "prod":
@@ -135,7 +143,7 @@ extension VLBeacon{
         case "qa":
             return "qa"
         default:
-            return ""
+            return "production"
         }
     }
     
