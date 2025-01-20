@@ -37,7 +37,7 @@ internal class BeaconSyncManager {
     /// Method to post data to server in form on Array with nested dictionaries
     ///
     /// - Parameter arrayOfBeaconEvents: return Array
-    private func postDataToServer(vlBeacon: VLBeacon, arrayOfBeaconEvents : Array<Dictionary<String,Any>>, authenticationToken: String, beaconType: BeaconType)
+    func postDataToServer(vlBeacon: VLBeacon, arrayOfBeaconEvents : Array<Dictionary<String,Any>>, authenticationToken: String, beaconType: BeaconType)
     {
         Log.shared.d("DB: Posting DB \(beaconType) Events")
         
