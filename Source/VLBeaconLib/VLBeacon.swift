@@ -115,7 +115,7 @@ final public class VLBeacon {
             event.environment = environment
             
             event.tveProvider = tveProvider
-            event.mvpdprovider = mvpdprovider
+            event.mvpdprovider = mvpdProvider
             event.eventType = "Player Beacon"
        
             debugPrint("Event Player: ", event.toDictionary())
