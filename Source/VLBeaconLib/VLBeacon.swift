@@ -23,6 +23,7 @@ final public class VLBeacon {
     internal var playerBeaconUrl : String?
     
     public var tveProvider: String?
+    public var mvpdProvider: String?
     
     public var environment: String = ""
     private var isOfflineEventsSynced = false
@@ -114,6 +115,7 @@ final public class VLBeacon {
             event.environment = environment
             
             event.tveProvider = tveProvider
+            event.mvpdprovider = mvpdprovider
             event.eventType = "Player Beacon"
        
             debugPrint("Event Player: ", event.toDictionary())
