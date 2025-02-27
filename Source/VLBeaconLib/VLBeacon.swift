@@ -34,9 +34,11 @@ final public class VLBeacon {
 
     public var authorizationToken: String? {
         get {
-            return tokenQueue.sync {
-                _authorizationToken
+            var result: String?
+            tokenQueue.sync {
+                result = _authorizationToken
             }
+            return result
         }
         set {
             tokenQueue.async {
