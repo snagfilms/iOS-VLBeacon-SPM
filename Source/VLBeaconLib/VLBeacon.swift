@@ -23,15 +23,32 @@ final public class VLBeacon {
     internal var playerBeaconUrl : String?
     
     public var tveProvider: String?
+    public var mvpdProvider: String?
     
     public var environment: String = ""
+    private var isOfflineEventsSynced = false
     
-    public var authorizationToken : String? {
-        didSet {
-            guard let authorizationToken else { return }
-            self.tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: authorizationToken)
+    private let tokenQueue = DispatchQueue(label: "com.viewlift.beacon.tokenQueue")
+
+    private var _authorizationToken: String?
+
+    public var authorizationToken: String? {
+        get {
+            var result: String?
+            tokenQueue.sync {
+                result = _authorizationToken
+            }
+            return result
+        }
+        set {
+            tokenQueue.async {
+                self._authorizationToken = newValue
+                guard let authorizationToken = newValue else { return }
+                self.tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: authorizationToken)
+            }
         }
     }
+
     
     public var debugLogs: Bool? = false {
         didSet{
@@ -48,15 +65,18 @@ final public class VLBeacon {
     
     
     public func startSyncBeaconEvents(userBeaconUrl: String?, playerBeaconUrl: String?) {
+        
         self.setupConfiguration(userBeaconUrl: userBeaconUrl, playerBeaconUrl: playerBeaconUrl)
         
         let sharedSyncManager = BeaconSyncManager.sharedInstance
         
         if NetworkStatus.sharedInstance.isNetworkAvailable() {
             if let authToken = authorizationToken {
-                sharedSyncManager.startSyncingTheEvents(vlBeacon: self, authenticationToken: authToken, withSuccess: {(_ success: Bool) -> Void in
-                })
+                    sharedSyncManager.startSyncingTheEvents(vlBeacon: self, authenticationToken: authToken, withSuccess: {(_ success: Bool) -> Void in
+                    })
             }
+            
+            
         }
     }
     
@@ -77,11 +97,19 @@ final public class VLBeacon {
     }
     
     public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol, userMergedForAnonymousId: String? = nil) {
-        guard let authToken = self.authorizationToken else { return }
         
-        guard let uID = tokenIdentity?.userId as? String else { return }
-        let anonymousId = tokenIdentity?.anonymousId as? String
         let deviceid = eventStructBody.toDictionary()["deviceid"] as? String
+        
+        if !isOfflineEventsSynced {
+            isOfflineEventsSynced = true
+            
+            NetworkStatus.sharedInstance.syncOfflineDat()
+        }
+        
+        let isNetworkAvailable = NetworkStatus.sharedInstance.isNetworkAvailable()
+        let uID = tokenIdentity?.userId as? String ?? ""
+        
+        let anonymousId = tokenIdentity?.anonymousId as? String ?? ""
         
         if var event = eventStructBody as? PlayerBeaconEventStruct {
             if (anonymousId ?? "").isEmpty == false {
@@ -97,7 +125,19 @@ final public class VLBeacon {
             event.environment = environment
             
             event.tveProvider = tveProvider
-            event.triggerEvents(authToken: authToken, beaconInstance: self)
+            event.mvpdprovider = mvpdProvider
+            event.eventType = "Player Beacon"
+       
+            debugPrint("Event Player: ", event.toDictionary())
+            
+            if !isNetworkAvailable {
+                BeaconOfflineHandle.saveDataToLocal(newDict: event.toDictionary())
+            }
+            
+            if let authToken = self.authorizationToken {
+                event.triggerEvents(authToken: authToken, beaconInstance: self)
+            }
+            
         } else if var eventUser = eventStructBody as? UserBeaconEventStruct {
             if (anonymousId ?? "").isEmpty == false {
                 eventUser.profid = "guest-user"
@@ -110,7 +150,17 @@ final public class VLBeacon {
                 eventUser.anonymousuid = userMergedForAnonymousId
             }
             eventUser.environment = environment
-            eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
+            eventUser.eventType = "User Beacon"
+            
+            debugPrint("Event User: ", eventUser.toDictionary())
+            
+            if !isNetworkAvailable {
+                BeaconOfflineHandle.saveDataToLocal(newDict: eventUser.toDictionary())
+            }
+            
+            if let authToken = self.authorizationToken {
+                eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
+            }
         }
     }
     

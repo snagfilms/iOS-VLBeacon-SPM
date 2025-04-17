@@ -24,6 +24,7 @@ public struct UserBeaconEventStruct {
     var eventdata: [String: Any]?
     var additionaldata: [String: Any]?
     var anonymousuid: String?
+    var eventType: String?
     
     public init(eventName: UserBeaconEventEnum, userId: String? = nil, profileId: String? = nil, siteId: String? = nil, pfm: String? = nil, etstamp: String? = nil, environment: String? = nil, appversion: String? = nil, source: String?, eventData: BeaconEventPayloadProtocol? = nil, additionalData: [String : Any]? = nil, tokenIdentity: TokenIdentity?) {
         

@@ -55,15 +55,39 @@ public struct PlayerBeaconEventStruct {
     var source: String?
     var tveProvider: String?
     var anonymousuid: String?
+    var eventType: String?
     
     var additionaldata: [String: Any]?
     
     public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolution: CGRect? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, siteId: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil, tokenIdentity: TokenIdentity?) {
         
-        guard let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity else { return }
-        
-        if (tokenId.userId ?? "").isEmpty {
-            return
+        if NetworkStatus.sharedInstance.isNetworkAvailable() {
+            guard let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity else { return }
+            
+            if (tokenId.userId ?? "").isEmpty {
+                return
+            }
+            
+            if let userID = tokenId.userId {
+                self.uid = userID
+            } else {
+                self.uid = userId
+            }
+            
+            if let deviceID = tokenId.deviceId {
+                self.deviceid = deviceID
+            } else {
+                self.deviceid = Utility.sharedInstance.getUUID()
+            }
+            
+            if let siteID = tokenId.siteId {
+                self.siteid = siteID
+            } else {
+                self.siteid = siteId
+            }
+            
+            self.aid = tokenId.siteName ?? ""
+            self.cid = tokenId.siteId ?? ""
         }
         
         self.pa = eventName.getBeaconEventNameString()
@@ -92,8 +116,7 @@ public struct PlayerBeaconEventStruct {
         self.appversion = appversion
         self.duration = duration
         
-        self.aid = tokenId.siteName ?? ""
-		self.cid = tokenId.siteId ?? ""
+        
         
         if let apos {
             self.apos = String(describing: apos)
@@ -130,23 +153,7 @@ public struct PlayerBeaconEventStruct {
             self.bufferHealth = String(describing: bufferHealth)
         }
         
-        if let userID = tokenId.userId {
-            self.uid = userID
-        } else {
-            self.uid = userId
-        }
         
-        if let deviceID = tokenId.deviceId {
-            self.deviceid = deviceID
-        } else {
-            self.deviceid = Utility.sharedInstance.getUUID()
-        }
-        
-        if let siteID = tokenId.siteId {
-            self.siteid = siteID
-        } else {
-            self.siteid = siteId
-        }
         
         if let source{
             self.source = source
