@@ -88,6 +88,14 @@ final public class VLBeacon {
         }
     }
     
+    public func updateUserBeaconEndpoint(_ userEndpoint: String) {
+        if userBeaconUrl == nil, (userBeaconUrl?.isEmpty ?? true),
+           !userEndpoint.isEmpty {
+            userBeaconUrl = userEndpoint
+            environment = getEnvironment()
+        }
+    }
+    
     public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol, userMergedForAnonymousId: String? = nil) {
         
         let deviceid = eventStructBody.toDictionary()["deviceid"] as? String
