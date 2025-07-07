@@ -56,10 +56,12 @@ public struct PlayerBeaconEventStruct {
     var tveProvider: String?
     var anonymousuid: String?
     var eventType: String?
+    var programId: String?
+    var title: String?
     
     var additionaldata: [String: Any]?
     
-    public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolution: CGRect? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, siteId: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil, tokenIdentity: TokenIdentity?) {
+    public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolution: CGRect? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, siteId: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil, tokenIdentity: TokenIdentity?, programId: String? = nil, title: String? = nil) {
         
         if NetworkStatus.sharedInstance.isNetworkAvailable() {
             guard let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity else { return }
@@ -88,6 +90,12 @@ public struct PlayerBeaconEventStruct {
             
             self.aid = tokenId.siteName ?? ""
             self.cid = tokenId.siteId ?? ""
+            if let id = programId, !id.isEmpty {
+                self.programId = id
+            }
+            if let programTitle = title, !programTitle.isEmpty {
+                self.title = programTitle
+            }
         }
         
         self.pa = eventName.getBeaconEventNameString()
@@ -140,14 +148,10 @@ public struct PlayerBeaconEventStruct {
             self.connectionSpeed = String(describing: connectionSpeed)
         }
         
-        if let bitrate, let res = self.getResolutionFromBitrate(bitrate) {
-            self.resolutionheight = String(describing: Int(res.height))
-            self.resolutionwidth = String(describing: Int(res.width))
-        } else {
-            self.resolutionheight = "0"
-            self.resolutionwidth = "0"
+        if let resolution{
+            self.resolutionwidth = "\(resolution.width)"
+            self.resolutionheight = "\(resolution.height)"
         }
-        
         
         if let bufferHealth {
             self.bufferHealth = String(describing: bufferHealth)
@@ -175,49 +179,7 @@ public struct PlayerBeaconEventStruct {
         self.tveProvider = tveProvider
         self.additionaldata = additionalData
     }
-    
-    
-    /**Resolution mapping: These values assume H.264 video encoding and a typical 30fps frame rate, which are common for streaming:
 
-    < 1 Mbps (1000 kbps): 360p (or lower)
-    1-2 Mbps (1000-2000 kbps): 480p
-    2-5 Mbps (2000-5000 kbps): 720p
-    5-10 Mbps (5000-10000 kbps): 1080p
-    10-15 Mbps (10000-15000 kbps): 1440p (2K)
-    > 15 Mbps (15000+ kbps): 4K
-     */
-    
-    private func getResolutionFromBitrate(_ bitrate: Int) -> (width: Int, height: Int)? {
-        switch bitrate {
-        case 0..<1000000:
-            // Bitrate < 1 Mbps: Approximate resolution 360p
-            return (width: 640, height: 360)
-            
-        case 1000000..<2000000:
-            // Bitrate 1-2 Mbps: Approximate resolution 480p
-            return (width: 854, height: 480)
-            
-        case 2000000..<5000000:
-            // Bitrate 2-5 Mbps: Approximate resolution 720p
-            return (width: 1280, height: 720)
-            
-        case 5000000..<10000000:
-            // Bitrate 5-10 Mbps: Approximate resolution 1080p
-            return (width: 1920, height: 1080)
-            
-        case 10000000..<15000000:
-            // Bitrate 10-15 Mbps: Approximate resolution 1440p (2K)
-            return (width: 2560, height: 1440)
-            
-        case 15000000...:
-            // Bitrate > 15 Mbps: Approximate resolution 4K
-            return (width: 3840, height: 2160)
-            
-        default:
-            // If bitrate is unknown or not in expected ranges
-            return nil
-        }
-    }
 }
 
 
