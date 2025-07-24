@@ -22,9 +22,10 @@ extension StructToDictionaryProtocol {
         let mirror = Mirror(reflecting: self)
         var dict = [String: Any]()
         for case let (label?, value) in mirror.children {
-            if let value = value as? String, !value.isEmpty {
+            if let value = value as? String{//}, !value.isEmpty {
                 if value != "nil" {
-                    dict[label.lowercased()] = value
+//                    dict[label.lowercased()] = value
+                    dict[label] = value
                 }
             }
 //            if label == additionalData, let value = value as? [String: Any] {
@@ -35,13 +36,16 @@ extension StructToDictionaryProtocol {
 //			}
 //            else
 			if let value = value as? [String: Any] {
-                dict[label.lowercased()] = value
+                dict[label] = value
+            }
+            else if let value = value as? [[String: String]] {
+                dict[label] = value
             }
             else if let value = value as? [String] {
-                dict[label.lowercased()] = value
+                dict[label] = value
             }
             else if let value = value as? [StructToDictionaryProtocol] {
-                dict[label.lowercased()] = value.map { $0.toDictionary() }
+                dict[label] = value.map { $0.toDictionary() }
             }
         }
         return dict

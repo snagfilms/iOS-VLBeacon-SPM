@@ -21,8 +21,10 @@ public struct UserBeaconEventStruct {
     var url: String!
     var appversion: String!
     var source: String?
-    var eventData: [String: Any]?
-    var additionalData: [String: Any]?
+    var eventdata: [String: Any]?
+    var additionaldata: [String: Any]?
+    var anonymousuid: String?
+    var eventType: String?
     
     public init(eventName: UserBeaconEventEnum, userId: String? = nil, profileId: String? = nil, siteId: String? = nil, pfm: String? = nil, etstamp: String? = nil, environment: String? = nil, appversion: String? = nil, source: String?, eventData: BeaconEventPayloadProtocol? = nil, additionalData: [String : Any]? = nil, tokenIdentity: TokenIdentity?) {
         
@@ -61,9 +63,9 @@ public struct UserBeaconEventStruct {
         
         self.etstamp = Utility.sharedInstance.getCurrentTimestampInGMT()
         
-        self.eventData = eventData?.toDictionary()
+        self.eventdata = eventData?.toDictionary()
         
-        self.additionalData = additionalData
+        self.additionaldata = additionalData
         
     }
 }
@@ -71,19 +73,19 @@ public struct UserBeaconEventStruct {
 extension UserBeaconEventStruct: BeaconEventBodyProtocol {
     
     public func triggerEvents(authToken: String, beaconInstance: VLBeacon) {
-        guard let beaconBaseURL = beaconInstance.getBeaconBaseUrl() else { return }
+        guard let beaconBaseURL = beaconInstance.userBeaconUrl else { return }
         
         DispatchQueue.global(qos: .utility).async {
-            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL + APIUrlEndPoint.userBeacon.rawValue)
+            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL)
         }
     }
     
     public func addBeaconInDBQuery() -> String? {
         var queryToAddBeaconEvent: String?
         
-        let additionalDataString: String? = additionalData?.jsonString()
+        let additionalDataString: String? = additionaldata?.jsonString()
         
-        let eventDataString: String? = eventData?.jsonString()
+        let eventDataString: String? = eventdata?.jsonString()
         
         queryToAddBeaconEvent = "insert into \(BeaconDBConstants().USERTABLENAME) (ename, uid, profid, siteid, pfm, etstamp, environment, deviceid, ref, url, appversion, source, eventData, additionalData) values('\(self.ename )','\(self.uid ?? "")','\(profid ?? "")','\(self.siteid ?? "")','\(self.pfm ?? "")','\(self.etstamp ?? "")','\(self.environment ?? "")','\(self.deviceid ?? "")','\(self.ref ?? "")','\(self.url ?? "")','\(self.appversion ?? "")','\(self.source ?? "")','\(eventDataString ?? "")','\(additionalDataString ?? "")')"
         

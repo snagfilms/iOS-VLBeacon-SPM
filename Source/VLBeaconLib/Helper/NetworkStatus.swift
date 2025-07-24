@@ -15,6 +15,7 @@ class NetworkStatus {
         
 //        reachability?.listener = { status in
 //            print("status changed: \(status)")
+////            self.syncOfflineDat()
 //        }
         
 //        reachability?.startListening()
@@ -31,6 +32,12 @@ class NetworkStatus {
             return false
         }
         return reachability.isReachable
+    }
+    
+    func syncOfflineDat() {
+        if isNetworkAvailable() {
+            BeaconOfflineHandle.triggerSavedEvents()
+        }
     }
 
 }

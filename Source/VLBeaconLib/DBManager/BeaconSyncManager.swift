@@ -37,24 +37,26 @@ internal class BeaconSyncManager {
     /// Method to post data to server in form on Array with nested dictionaries
     ///
     /// - Parameter arrayOfBeaconEvents: return Array
-    private func postDataToServer(vlBeacon: VLBeacon, arrayOfBeaconEvents : Array<Dictionary<String,Any>>, authenticationToken: String, beaconType: BeaconType)
+    func postDataToServer(vlBeacon: VLBeacon, arrayOfBeaconEvents : Array<Dictionary<String,Any>>, authenticationToken: String, beaconType: BeaconType)
     {
         Log.shared.d("DB: Posting DB \(beaconType) Events")
-        if let beaconBaseURL = APIUrl.getAPIBaseUrl() {
-            
-            var beaconEndpoint: String
-            
-            switch beaconType {
-            case .user:
-                beaconEndpoint = beaconBaseURL + APIUrlEndPoint.userBeacon.rawValue
-            case .player:
-                beaconEndpoint = beaconBaseURL + APIUrlEndPoint.playerBeacon.rawValue
-            }
-            
-            DataManger().net_postOfflineBeaconEvents(beaconEventArray: arrayOfBeaconEvents, authenticationToken: authenticationToken, baseUrl: beaconEndpoint) { (response) in
-                if(response) {
-                    self.queryManager.removeBeaconEventFromTheBeaconDB(beaconType)
-                }
+        
+        var beaconEndpoint: String = ""
+        
+        switch beaconType {
+        case .user:
+            beaconEndpoint = APIUrl.getUserBeaconBaseUrl() ?? ""
+        case .player:
+            beaconEndpoint = APIUrl.getPlayerBeaconBaseUrl() ?? ""
+        }
+        
+        if beaconEndpoint.isEmpty {
+            return
+        }
+        
+        DataManger().net_postOfflineBeaconEvents(beaconEventArray: arrayOfBeaconEvents, authenticationToken: authenticationToken, baseUrl: beaconEndpoint) { (response) in
+            if(response) {
+                self.queryManager.removeBeaconEventFromTheBeaconDB(beaconType)
             }
         }
     }

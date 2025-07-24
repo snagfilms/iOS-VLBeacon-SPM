@@ -14,7 +14,8 @@ struct JWTTokenParser {
             let userIdentity = try JSONDecoder().decode(TokenIdentity.self, from: data)
             return userIdentity
         }
-        catch {
+        catch (let error){
+            Log.shared.e("jwtTokenParser failed \(error.localizedDescription)")
             return nil
         }
     }
