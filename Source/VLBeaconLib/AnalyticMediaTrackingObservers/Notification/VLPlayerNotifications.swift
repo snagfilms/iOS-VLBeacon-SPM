@@ -5,55 +5,156 @@
 //  Created by rakeshkrsharma@viewlift.com on 22/10/25.
 //
 
-
 import Foundation
 
 /// Central repository for all player-related notification names
 /// ⚠️ CRITICAL: These names MUST remain stable across all SPM modules
 public struct VLPlayerNotifications {
     
+    // MARK: - Bundle Identifier
+    
+    /// The bundle identifier prefix for all notifications
+    /// This ensures uniqueness across multiple apps using the same library
+    private static var bundlePrefix: String {
+        if let bundleId = Bundle.main.bundleIdentifier {
+            return bundleId
+        }
+        
+        return "com.viewlift.mediaTracking"
+    }
+    
+    /// Helper method to create notification names with bundle identifier prefix
+    private static func notificationName(_ suffix: String) -> Notification.Name {
+        return Notification.Name("\(bundlePrefix).\(suffix)")
+    }
+    
     // MARK: - Analytics Info
-    public static let analyticsInfoUpdated = Notification.Name("com.vlplayer.analytics.info.updated")
+    
+    public static var analyticsInfoUpdated: Notification.Name {
+        notificationName("vlplayer.analytics.info.updated")
+    }
     
     // MARK: - Session Events
-    public static let sessionStart = Notification.Name("com.vlplayer.session.start")
-    public static let sessionEnd = Notification.Name("com.vlplayer.session.end")
+    
+    public static var sessionStart: Notification.Name {
+        notificationName("vlplayer.session.start")
+    }
+    
+    public static var sessionEnd: Notification.Name {
+        notificationName("vlplayer.session.end")
+    }
     
     // MARK: - Playback Events
-    public static let playStarted = Notification.Name("com.vlplayer.play.started")
-    public static let videoPaused = Notification.Name("com.vlplayer.video.paused")
-    public static let videoComplete = Notification.Name("com.vlplayer.video.complete")
+    
+    public static var playStarted: Notification.Name {
+        notificationName("vlplayer.play.started")
+    }
+    
+    public static var videoPaused: Notification.Name {
+        notificationName("vlplayer.video.paused")
+    }
+    
+    public static var videoComplete: Notification.Name {
+        notificationName("vlplayer.video.complete")
+    }
     
     // MARK: - Ads Events
-    public static let adsStart = Notification.Name("com.vlplayer.ads.start")
-    public static let adsComplete = Notification.Name("com.vlplayer.ads.complete")
-    public static let adsBreakStart = Notification.Name("com.vlplayer.ads.break.start")
-    public static let adsBreakComplete = Notification.Name("com.vlplayer.ads.break.complete")
+    
+    public static var adsStart: Notification.Name {
+        notificationName("vlplayer.ads.start")
+    }
+    
+    public static var adsComplete: Notification.Name {
+        notificationName("vlplayer.ads.complete")
+    }
+    
+    public static var adsBreakStart: Notification.Name {
+        notificationName("vlplayer.ads.break.start")
+    }
+    
+    public static var adsBreakComplete: Notification.Name {
+        notificationName("vlplayer.ads.break.complete")
+    }
     
     // MARK: - Buffering Events
-    public static let bufferStart = Notification.Name("com.vlplayer.buffer.start")
-    public static let bufferComplete = Notification.Name("com.vlplayer.buffer.complete")
-    public static let bitrateChange = Notification.Name("com.vlplayer.bitrate.change")
+    
+    public static var bufferStart: Notification.Name {
+        notificationName("vlplayer.buffer.start")
+    }
+    
+    public static var bufferComplete: Notification.Name {
+        notificationName("vlplayer.buffer.complete")
+    }
+    
+    public static var bitrateChange: Notification.Name {
+        notificationName("vlplayer.bitrate.change")
+    }
     
     // MARK: - Seeking Events
-    public static let seekStart = Notification.Name("com.vlplayer.seek.start")
-    public static let seekComplete = Notification.Name("com.vlplayer.seek.complete")
+    
+    public static var seekStart: Notification.Name {
+        notificationName("vlplayer.seek.start")
+    }
+    
+    public static var seekComplete: Notification.Name {
+        notificationName("vlplayer.seek.complete")
+    }
     
     // MARK: - Chapter Events
-    public static let chapterStart = Notification.Name("com.vlplayer.chapter.start")
-    public static let chapterComplete = Notification.Name("com.vlplayer.chapter.complete")
+    
+    public static var chapterStart: Notification.Name {
+        notificationName("vlplayer.chapter.start")
+    }
+    
+    public static var chapterComplete: Notification.Name {
+        notificationName("vlplayer.chapter.complete")
+    }
     
     // MARK: - Playhead Events
-    public static let playheadUpdate = Notification.Name("com.vlplayer.playhead.update")
+    
+    public static var playheadUpdate: Notification.Name {
+        notificationName("vlplayer.playhead.update")
+    }
     
     // MARK: - Error Events
-    public static let error = Notification.Name("com.vlplayer.error")
+    
+    public static var error: Notification.Name {
+        notificationName("vlplayer.error")
+    }
     
     // MARK: - Assets Events
-    public static let videoAssetsUpdated = Notification.Name("com.vlplayer.assets.video.updated")
-    public static let adAssetsUpdated = Notification.Name("com.vlplayer.assets.ad.updated")
-    public static let userIdentityUpdated = Notification.Name("com.vlplayer.useridentity.updated")
-    public static let screenModeUpdated = Notification.Name("com.vlplayer.screenmode.updated")
+    
+    public static var videoAssetsUpdated: Notification.Name {
+        notificationName("vlplayer.assets.video.updated")
+    }
+    
+    public static var adAssetsUpdated: Notification.Name {
+        notificationName("vlplayer.assets.ad.updated")
+    }
+    
+    public static var userIdentityUpdated: Notification.Name {
+        notificationName("vlplayer.useridentity.updated")
+    }
+    
+    public static var screenModeUpdated: Notification.Name {
+        notificationName("vlplayer.screenmode.updated")
+    }
     
     private init() {}
 }
+
+// MARK: - Debug Helper
+
+#if DEBUG
+public extension VLPlayerNotifications {
+    /// Print all notification names for debugging
+    static func printAllNotifications() {
+        print("📢 VLPlayer Notification Names (Bundle: \(bundlePrefix)):")
+        print("  - sessionStart: \(sessionStart.rawValue)")
+        print("  - playStarted: \(playStarted.rawValue)")
+        print("  - adsStart: \(adsStart.rawValue)")
+        // Add more as needed
+    }
+}
+#endif
+
