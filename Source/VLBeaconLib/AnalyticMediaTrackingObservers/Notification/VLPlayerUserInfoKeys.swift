@@ -1,0 +1,39 @@
+//
+//  VLPlayerUserInfoKeys.swift
+//  VLBeaconLib
+//
+//  Created by rakeshkrsharma@viewlift.com on 22/10/25.
+//
+
+import Foundation
+
+/// Standard keys for accessing data in notification userInfo dictionaries
+/// ⚠️ CRITICAL: These keys MUST match exactly across all modules
+public struct VLPlayerUserInfoKeys {
+    
+    // MARK: - Asset Info Keys
+    public static let adInfo = "adInfo"
+    public static let chapterInfo = "chapterInfo"
+    public static let userIdentity = "userIdentity"
+    
+    // MARK: - Time Keys
+    public static let currentTime = "currentTime"
+    public static let endTime = "endTime"
+    public static let newTime = "newTime"
+    public static let shouldResume = "shouldResume"
+    
+    // MARK: - Error Keys
+    public static let errorMessage = "errorMessage"
+    public static let isFatal = "isFatal"
+    
+    // MARK: - UI State Keys
+    public static let isFullScreen = "isFullScreen"
+    public static let trackOptions = "trackOptions"
+    
+    // MARK: - Analytics Keys
+    public static let analyticsContentInfo = "analyticsContentInfo"
+    public static let analyticsPlayerInfo = "analyticsPlayerInfo"
+    public static let analyticsTVProviderInfo = "analyticsTVProviderInfo"
+    
+    private init() {}
+}
