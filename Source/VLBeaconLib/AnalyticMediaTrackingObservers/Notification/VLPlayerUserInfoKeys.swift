@@ -8,7 +8,6 @@
 import Foundation
 
 /// Standard keys for accessing data in notification userInfo dictionaries
-/// ⚠️ CRITICAL: These keys MUST match exactly across all modules
 public struct VLPlayerUserInfoKeys {
     
     // MARK: - Asset Info Keys
@@ -33,6 +32,7 @@ public struct VLPlayerUserInfoKeys {
     // MARK: - Analytics Keys
     public static let analyticsContentInfo = "analyticsContentInfo"
     public static let analyticsPlayerInfo = "analyticsPlayerInfo"
+    public static let analyticsAvPlayer = "analyticsAvPlayer"
     public static let analyticsTVProviderInfo = "analyticsTVProviderInfo"
     
     private init() {}

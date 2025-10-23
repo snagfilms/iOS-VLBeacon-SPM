@@ -14,6 +14,7 @@
 //
 
 import Foundation
+import AVFoundation
 
 /// Default implementation of event data validator
 public final class VLEventDataValidator: EventDataValidator {
@@ -47,6 +48,7 @@ public final class VLEventDataValidator: EventDataValidator {
         NSDate.self,
         NSData.self,
         NSURL.self,
+        AVPlayer.self,
         [String: Any].self,
         [Any].self
     ]
@@ -263,6 +265,9 @@ public final class VLEventDataValidator: EventDataValidator {
     /// Sanitize a value
     private func sanitizeValue(_ value: Any) -> Any? {
         switch value {
+        case let avPlayer as AVPlayer:
+            return avPlayer
+            
         case let string as String:
             return sanitizeString(string)
             
