@@ -90,6 +90,14 @@ public struct VLPlayerNotifications {
         notificationName("vlplayer.bitrate.change")
     }
     
+    public static var closeCaptionChange: Notification.Name {
+        notificationName("vlplayer.closed.caption")
+    }
+    
+    public static var audioChange: Notification.Name {
+        notificationName("vlplayer.audio")
+    }
+    
     // MARK: - Seeking Events
     
     public static var seekStart: Notification.Name {

@@ -20,6 +20,8 @@ public struct VLPlayerUserInfoKeys {
     public static let endTime = "endTime"
     public static let newTime = "newTime"
     public static let shouldResume = "shouldResume"
+    public static let closeCaptionlanguage = "closeCaptionlanguage"
+    public static let audioChange = "audioChange"
     
     // MARK: - Error Keys
     public static let errorMessage = "errorMessage"
