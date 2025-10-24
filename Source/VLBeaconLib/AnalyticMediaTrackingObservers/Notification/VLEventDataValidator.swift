@@ -364,10 +364,6 @@ extension VLEventDataValidator {
             return data.keys.contains(VLPlayerUserInfoKeys.currentTime) &&
                    data.keys.contains(VLPlayerUserInfoKeys.endTime)
             
-        case VLPlayerNotifications.seekComplete:
-            return data.keys.contains(VLPlayerUserInfoKeys.newTime) &&
-                   data.keys.contains(VLPlayerUserInfoKeys.shouldResume)
-            
         case VLPlayerNotifications.error:
             return data.keys.contains(VLPlayerUserInfoKeys.errorMessage)
             
