@@ -19,8 +19,7 @@ let package = Package(
             name: "VLBeaconLib",
             swiftSettings: [
                 .unsafeFlags(
-                    ["-enable-library-evolution"],
-                    .when(configuration: .release)
+                    ["-enable-library-evolution"]
                 )
             ]
         ),
