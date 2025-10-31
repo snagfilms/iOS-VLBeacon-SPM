@@ -16,13 +16,7 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "VLBeaconLib",
-            swiftSettings: [
-                .unsafeFlags(
-                    ["-enable-library-evolution"]
-                )
-            ]
-        ),
+            name: "VLBeaconLib"),
         .testTarget(
             name: "VLBeaconLibTests",
             dependencies: ["VLBeaconLib"]),
