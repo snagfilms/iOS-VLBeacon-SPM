@@ -362,7 +362,9 @@ extension VLEventDataValidator {
             
         case VLPlayerNotifications.chapterStart:
             return data.keys.contains(VLPlayerUserInfoKeys.currentTime) &&
-                   data.keys.contains(VLPlayerUserInfoKeys.endTime)
+            data.keys
+                .contains(VLPlayerUserInfoKeys.endTime) && data.keys
+                .contains(VLPlayerUserInfoKeys.startTime)
             
         case VLPlayerNotifications.error:
             return data.keys.contains(VLPlayerUserInfoKeys.errorMessage)
