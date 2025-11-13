@@ -37,6 +37,7 @@ public struct VLPlayerUserInfoKeys {
     public static let analyticsPlayerInfo = "analyticsPlayerInfo"
     public static let analyticsAvPlayer = "analyticsAvPlayer"
     public static let analyticsTVProviderInfo = "analyticsTVProviderInfo"
+    public static let analyticsUserInfo = "analyticsUserInfo"
     
     private init() {}
 }
