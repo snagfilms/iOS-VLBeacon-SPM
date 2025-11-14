@@ -23,6 +23,9 @@ public struct VLPlayerUserInfoKeys {
     public static let shouldResume = "shouldResume"
     public static let closeCaptionlanguage = "closeCaptionlanguage"
     public static let audioChange = "audioChange"
+    public static let frameRateChange = "frameRateChange"
+    public static let analyticsSeekStartTime = "analyticsSeekStartTime"
+    public static let analyticsSeekEndTime = "analyticsSeekEndTime"
     
     // MARK: - Error Keys
     public static let errorMessage = "errorMessage"
@@ -38,6 +41,7 @@ public struct VLPlayerUserInfoKeys {
     public static let analyticsAvPlayer = "analyticsAvPlayer"
     public static let analyticsTVProviderInfo = "analyticsTVProviderInfo"
     public static let analyticsUserInfo = "analyticsUserInfo"
+    public static let analyticsAdsLoaderInfo = "analyticsAdsLoaderInfo"
     
     private init() {}
 }
