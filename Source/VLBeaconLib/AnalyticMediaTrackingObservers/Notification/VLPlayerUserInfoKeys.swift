@@ -31,6 +31,7 @@ public struct VLPlayerUserInfoKeys {
     // MARK: - UI State Keys
     public static let isFullScreen = "isFullScreen"
     public static let trackOptions = "trackOptions"
+    public static let chapterTimeline = "chapterTimeline"
     
     // MARK: - Analytics Keys
     public static let analyticsContentInfo = "analyticsContentInfo"
