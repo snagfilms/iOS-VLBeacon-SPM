@@ -125,9 +125,10 @@ public final class VLEventDataValidator: EventDataValidator {
             }
             
             // Sanitize value
-            if let sanitizedValue = sanitizeValue(value) {
-                sanitized[sanitizedKey] = sanitizedValue
-            }
+            sanitized[sanitizedKey] = value
+//            if let sanitizedValue = sanitizeValue(value) {
+//                sanitized[sanitizedKey] = sanitizedValue
+//            }
         }
         
         return sanitized

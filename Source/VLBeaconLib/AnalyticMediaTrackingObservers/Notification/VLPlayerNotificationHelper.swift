@@ -119,14 +119,16 @@ public final class VLPlayerNotificationHelper: NotificationPublisher, Notificati
     // MARK: - Private Methods
     
     private func sanitizeAndValidate(_ userInfo: [String: Any]?) -> [String: Any]? {
-        guard let userInfo = userInfo else { return nil }
+        return userInfo
         
-        guard validator.validate(userInfo) else {
-            debugPrint("Invalid notification user info")
-            return nil
-        }
-        
-        return validator.sanitize(userInfo)
+//        guard let userInfo = userInfo else { return nil }
+//        
+//        guard validator.validate(userInfo) else {
+//            debugPrint("Invalid notification user info")
+//            return nil
+//        }
+//        
+//        return validator.sanitize(userInfo)
     }
     
     private func handleNotification(_ notification: Notification, with block: @escaping (Notification) -> Void) {
