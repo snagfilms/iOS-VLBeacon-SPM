@@ -148,6 +148,10 @@ public struct VLPlayerNotifications {
         notificationName("vlplayer.screenmode.updated")
     }
     
+    public static var reportDroppedFramesUpdate: Notification.Name {
+            notificationName("vlplayer.dropperFrames.updated")
+    }
+    
     private init() {}
 }
 

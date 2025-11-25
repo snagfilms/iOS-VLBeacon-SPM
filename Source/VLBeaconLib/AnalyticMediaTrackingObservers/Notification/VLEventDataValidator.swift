@@ -154,25 +154,89 @@ public final class VLEventDataValidator: EventDataValidator {
     
     /// Check if value type is allowed
     private func isValidValue(_ value: Any) -> Bool {
-        // Check if type is in allowed list
-        for allowedType in allowedTypes {
-            if type(of: value) == allowedType {
+            guard let unwrapped = unwrapOptional(value) else {
+                // nil optional — choose behavior:
+                return false           // ← usually best to reject nil
+                // return true         // ← or allow it
+            }
+            
+            // Check primitive / allowed root types
+            if isAllowedType(unwrapped) {
                 return true
             }
+            
+            // Nested dict
+            if let dict = unwrapped as? [String: Any] {
+                return dict.allSatisfy { isValidKey($0.key) && isValidValue($0.value) }
+            }
+            
+            // Array
+            if let array = unwrapped as? [Any] {
+                return array.allSatisfy { isValidValue($0) }
+            }
+            
+            // Anything else → invalid
+            return false
         }
         
-        // Special handling for nested dictionaries
-        if let dict = value as? [String: Any] {
-            return dict.allSatisfy { isValidKey($0.key) && isValidValue($0.value) }
+        private func isAllowedType(_ value: Any) -> Bool {
+            let valueType = type(of: value)
+
+            for allowedType in allowedTypes {
+
+                // Exact match for Swift value types (Int, Double, Bool...)
+                if valueType == allowedType {
+                    return true
+                }
+
+                // Obj-C class type check (NSString, NSURL, etc.)
+                if let obj = value as AnyObject?,
+                   let allowedClass = allowedType as? AnyClass,
+                   obj.isKind(of: allowedClass) {
+                    return true
+                }
+
+                // Bridging checks (Swift String <-> NSString, etc.)
+                if isBridgedMatch(value, allowedType: allowedType) {
+                    return true
+                }
+            }
+
+            return false
         }
-        
-        // Special handling for arrays
-        if let array = value as? [Any] {
-            return array.allSatisfy { isValidValue($0) }
+
+        private func isBridgedMatch(_ value: Any, allowedType: Any.Type) -> Bool {
+            switch value {
+            case is String:
+                return allowedType == NSString.self
+            case is NSString:
+                return allowedType == String.self
+
+            case is URL:
+                return allowedType == NSURL.self
+            case is NSURL:
+                return allowedType == URL.self
+
+            case is Data:
+                return allowedType == NSData.self
+            case is NSData:
+                return allowedType == Data.self
+
+            default:
+                return false
+            }
         }
+
         
-        return false
-    }
+        private func unwrapOptional(_ value: Any) -> Any? {
+            let mirror = Mirror(reflecting: value)
+            
+            // Not an optional → return as-is
+            guard mirror.displayStyle == .optional else { return value }
+            
+            // Optional.nil
+            return mirror.children.first?.value
+        }
     
     /// Check nesting depth of dictionaries
     private func checkNestingDepth(_ data: [String: Any], currentDepth: Int) -> Bool {
