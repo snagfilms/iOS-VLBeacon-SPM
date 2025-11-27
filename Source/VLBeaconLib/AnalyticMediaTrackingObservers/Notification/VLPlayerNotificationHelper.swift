@@ -22,6 +22,7 @@ public final class VLPlayerNotificationHelper: NotificationPublisher, Notificati
     private let validator: EventDataValidator
     private let notificationQueue: OperationQueue
     @ThreadSafeArray private var activeObservers: [NSObjectProtocol]
+    public var sessionVideoId: String?
     
     // MARK: - Initialization
     

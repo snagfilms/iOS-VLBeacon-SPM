@@ -14,6 +14,7 @@ public struct VLPlayerUserInfoKeys {
     public static let adInfo = "adInfo"
     public static let chapterInfo = "chapterInfo"
     public static let userIdentity = "userIdentity"
+    public static let sessionVideoId = "sessionVideoId"
     
     // MARK: - Time Keys
     public static let currentTime = "currentTime"
