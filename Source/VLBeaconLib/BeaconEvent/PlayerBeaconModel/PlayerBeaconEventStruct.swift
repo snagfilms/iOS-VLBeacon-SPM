@@ -61,7 +61,7 @@ public struct PlayerBeaconEventStruct {
     var program_start_time: String?
     var program_end_time: String?
     var islivestream: Bool?
-    var userContent: Bool?
+    var userConsent: Bool?
     
     var additionaldata: [String: Any]?
     
@@ -127,7 +127,7 @@ public struct PlayerBeaconEventStruct {
         self.guid = guid
         self.appversion = appversion
         self.duration = duration
-        self.userContent = userConsent
+        self.userConsent = userConsent
         
         if let programStartTimeCheck = programStartTime, !programStartTimeCheck.isEmpty {
             self.program_start_time = programStartTimeCheck
