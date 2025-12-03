@@ -34,6 +34,10 @@ public struct VLPlayerNotifications {
         notificationName("vlplayer.analytics.info.updated")
     }
     
+    public static var analyticsOtherInfoUpdated: Notification.Name {
+        notificationName("vlplayer.analytics.otherinfo.updated")
+    }
+    
     // MARK: - Session Events
     
     public static var sessionStart: Notification.Name {
