@@ -28,6 +28,9 @@ extension StructToDictionaryProtocol {
                     dict[label] = value
                 }
             }
+            if let value = value as? Bool {
+                dict[label] = value
+            }
 //            if label == additionalData, let value = value as? [String: Any] {
 //                dict.merge(value) { (current, _) in current }
 //            }

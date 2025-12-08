@@ -100,7 +100,9 @@ public struct PlanPayload: BeaconEventPayloadProtocol {
         self.pgId = pgId
         self.pgName = pgName
         self.modType = modType
-        self.tveProvider = tveProvider
+        if let _ = mvpdProvider {
+            self.tveProvider = tveProvider
+        }
         self.mvpdProvider = mvpdProvider
         self.modID = modID
         self.url = url
