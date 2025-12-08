@@ -2,11 +2,6 @@ Pod::Spec.new do |s|
   s.name             = 'VLBeaconLib'
   s.version          = '1.0.0'
   s.summary          = 'VLBeacon SDK for beacon tracking and analytics'
-  s.description      = <<-DESC
-                       VLBeacon library for beacon tracking and analytics integration.
-                       Supports both iOS and tvOS platforms.
-                       DESC
-  
   s.homepage         = 'https://github.com/snagfilms/iOS-VLBeacon-SPM'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.authors          = { "VL Player" => "techsupport@viewlift.com" }
@@ -20,10 +15,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = '13.0'
   s.swift_versions = ['5.8', '5.9', '6.0']
   
-  # FIXED: Changed "Sources" to "Source" (singular)
   s.source_files = 'Source/VLBeaconLib/**/*.{swift,h,m}'
-  
-  # If you have resources in the Resources folder
   s.resources = 'Source/VLBeaconLib/Resources/**/*'
   
   s.frameworks = 'Foundation'
@@ -32,7 +24,9 @@ Pod::Spec.new do |s|
   s.requires_arc = true
   s.module_name = 'VLBeaconLib'
   
+  # Disable strict concurrency checking
   s.pod_target_xcconfig = {
-    'DEFINES_MODULE' => 'YES'
+    'DEFINES_MODULE' => 'YES',
+    'SWIFT_STRICT_CONCURRENCY' => 'minimal'  # Add this line
   }
 end
