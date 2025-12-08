@@ -27,7 +27,6 @@ Pod::Spec.new do |s|
     '
   # Disable concurrency checking completely
   s.pod_target_xcconfig = {
-    'DEFINES_MODULE' => 'YES',
     'SWIFT_STRICT_CONCURRENCY' => 'minimal',
     'SWIFT_VERSION' => '5.0',  # Force Swift 5 mode
     'OTHER_SWIFT_FLAGS' => '$(inherited) -Xfrontend -warn-concurrency -Xfrontend -enable-actor-data-race-checks'
