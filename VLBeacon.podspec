@@ -1,58 +1,47 @@
 Pod::Spec.new do |s|
-  s.name             = 'VLBeacon'
-  s.version          = '1.0.0'
-  s.summary          = 'VLBeacon SDK'
+  s.name             = 'VLBeaconLib'
+  s.version          = '1.0.0'  # Keep version for reference
+  s.summary          = 'VLBeacon SDK for beacon tracking and analytics'
   s.description      = <<-DESC
                        VLBeacon library for beacon tracking and analytics integration.
+                       Supports both iOS and tvOS platforms.
                        DESC
   
-  s.homepage         = 'https://viewlift.com/'
+  s.homepage         = 'https://github.com/snagfilms/iOS-VLBeacon-SPM'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
-    s.authors      = { "VL Player" => "techsupport@viewlift.com" }
+  s.authors          = { "VL Player" => "techsupport@viewlift.com" }
+  
+  # Use branch instead of tag
   s.source           = {
-    :git => 'https://github.com/snagfilms/iOS-VLBeacon-SPM',
-    :branch => 'Develop'
+    :git => 'https://github.com/snagfilms/iOS-VLBeacon-SPM.git',
+    :branch => 'Develop_Pod'
   }
   
   # Platform requirements
   s.ios.deployment_target = '14.0'
-  s.tvos.deployment_target = '14.0'
+  s.tvos.deployment_target = '13.0'
   
   # Swift version
-  s.swift_versions = ['5.0', '5.1', '5.2', '5.3', '5.4', '5.5', '5.6', '5.7', '5.8', '5.9', '6.0']
+  s.swift_versions = ['5.8', '5.9', '6.0']
   
-  # Source files - all Swift files under Source directory
-  s.source_files = 'Source/**/*.{swift,h,m}'
+  # Source files - matching SPM structure
+  s.source_files = 'Sources/VLBeaconLib/**/*.{swift,h,m}'
   
-  # Resources (if any)
-  # s.resources = 'Source/Resources/**/*'
+  # Required frameworks
+  s.frameworks = 'Foundation'
   
-  # Public headers (if any)
-  # s.public_header_files = 'Source/**/*.h'
-  
-  # Frameworks required
-  s.frameworks = 'Foundation', 'UIKit', 'CoreLocation'
-  
-  # If you need system libraries
-  # s.libraries = 'sqlite3', 'z'
+  # Platform-specific frameworks
+  s.ios.frameworks = 'UIKit', 'CoreLocation'
+  s.tvos.frameworks = 'UIKit'
   
   # Requires ARC
   s.requires_arc = true
   
-  # If you have dependencies on other pods
-  # s.dependency 'Alamofire', '~> 5.0'
-  # s.dependency 'SwiftyJSON', '~> 5.0'
-  
-  # Module name (optional, defaults to pod name)
+  # Module name
   s.module_name = 'VLBeaconLib'
   
   # Pod target xcconfig
   s.pod_target_xcconfig = {
-    'SWIFT_VERSION' => '6.0',
     'DEFINES_MODULE' => 'YES'
   }
-  
-  # User target xcconfig (optional)
-  # s.user_target_xcconfig = { 'EXCLUDED_ARCHS[sdk=iphonesimulator*]' => 'arm64' }
 end
-
