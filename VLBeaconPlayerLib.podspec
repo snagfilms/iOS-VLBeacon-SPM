@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name             = 'VLBeaconLib'
+  s.name             = 'VLBeaconPlayerLib'
   s.version          = '1.0.0'
   s.summary          = 'VLBeacon SDK for beacon tracking and analytics'
   s.homepage         = 'https://github.com/snagfilms/iOS-VLBeacon-SPM'
@@ -8,7 +8,7 @@ Pod::Spec.new do |s|
   
   s.source           = {
     :git => 'https://github.com/snagfilms/iOS-VLBeacon-SPM.git',
-    :branch => 'Develop_Pod'
+    :branch => 'Develop_Pod_Example'
   }
   
   s.ios.deployment_target = '14.0'
@@ -21,7 +21,7 @@ Pod::Spec.new do |s|
   s.ios.frameworks = 'UIKit', 'CoreLocation'
   s.tvos.frameworks = 'UIKit'
   s.requires_arc = true
-  s.module_name = 'VLBeaconLib'
+  s.module_name = 'VLBeaconPlayerLib'
   
   # Disable concurrency checking completely
   s.pod_target_xcconfig = {

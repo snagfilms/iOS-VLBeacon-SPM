@@ -4,22 +4,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "VLBeaconLib",
+    name: "VLBeaconPlayer",
     platforms: [
         .iOS(.v14),
         .tvOS(.v13)
     ],
     products: [
         .library(
-            name: "VLBeaconLib",
-            targets: ["VLBeaconLib"]),
+            name: "VLBeaconPlayer",
+            targets: ["VLBeaconPlayer"]),
     ],
     targets: [
         .target(
-            name: "VLBeaconLib"),
-        .testTarget(
-            name: "VLBeaconLibTests",
-            dependencies: ["VLBeaconLib"]),
+            name: "VLBeaconPlayer")
     ],
     swiftLanguageVersions: [.v5]
 )
