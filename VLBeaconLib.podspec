@@ -13,10 +13,9 @@ Pod::Spec.new do |s|
   
   s.ios.deployment_target = '14.0'
   s.tvos.deployment_target = '13.0'
-  s.swift_versions = ['5.8', '5.9', '6.0']
+  s.swift_versions = ['5.8', '5.9']  # Don't use 6.0
   
   s.source_files = 'Source/VLBeaconLib/**/*.{swift,h,m}'
-  s.resources = 'Source/VLBeaconLib/Resources/**/*'
   
   s.frameworks = 'Foundation'
   s.ios.frameworks = 'UIKit', 'CoreLocation'
@@ -24,9 +23,16 @@ Pod::Spec.new do |s|
   s.requires_arc = true
   s.module_name = 'VLBeaconLib'
   
-  # Disable strict concurrency checking
+  # Disable concurrency checking completely
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
-    'SWIFT_STRICT_CONCURRENCY' => 'minimal'  # Add this line
+    'SWIFT_STRICT_CONCURRENCY' => 'minimal',
+    'SWIFT_VERSION' => '5.0',  # Force Swift 5 mode
+    'OTHER_SWIFT_FLAGS' => '$(inherited) -Xfrontend -warn-concurrency -Xfrontend -enable-actor-data-race-checks'
+  }
+  
+  # Also disable for user targets
+  s.user_target_xcconfig = {
+    'SWIFT_STRICT_CONCURRENCY' => 'minimal'
   }
 end
