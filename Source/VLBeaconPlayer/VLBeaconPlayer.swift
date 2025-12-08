@@ -7,7 +7,7 @@ import Foundation
 final public class VLBeaconPlayer {
     private static let sharedInstance = VLBeaconPlayer()
     
-    public class func getInstance()-> VLBeacon {
+    public class func getInstance()-> VLBeaconPlayer {
         return sharedInstance
     }
     
