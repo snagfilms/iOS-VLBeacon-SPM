@@ -1,5 +1,5 @@
 Pod::Spec.new do |s|
-  s.name             = 'VLBeaconPlayerLib'
+  s.name             = 'VLBeaconPlayer'
   s.version          = '1.0.0'
   s.summary          = 'VLBeacon SDK for beacon tracking and analytics'
   s.homepage         = 'https://github.com/snagfilms/iOS-VLBeacon-SPM'
@@ -15,13 +15,13 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = '13.0'
   s.swift_versions = ['5.8', '5.9']  # Don't use 6.0
   
-  s.source_files = 'Source/VLBeaconLib/**/*.{swift,h,m}'
+  s.source_files = 'Source/VLBeaconPlayer/**/*.{swift,h,m}'
   
   s.frameworks = 'Foundation'
   s.ios.frameworks = 'UIKit', 'CoreLocation'
   s.tvos.frameworks = 'UIKit'
   s.requires_arc = true
-  s.module_name = 'VLBeaconPlayerLib'
+  s.module_name = 'VLBeaconPlayer'
   
   s.dependency 'VLPlayerLib'
     '
