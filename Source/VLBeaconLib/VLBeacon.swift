@@ -123,8 +123,9 @@ final public class VLBeacon {
                 event.anonymousuid = userMergedForAnonymousId
             }
             event.environment = environment
-            
-            event.tveProvider = tveProvider
+            if let _ = mvpdProvider {
+                event.tveProvider = tveProvider
+            }
             event.mvpdprovider = mvpdProvider
             event.eventType = "Player Beacon"
        
