@@ -11,16 +11,16 @@ import React
 @objc(RNPlayerViewManager)
 final public class RNPlayerViewManager: RCTViewManager {
     
-    override static func requiresMainQueueSetup() -> Bool {
+    override public static func requiresMainQueueSetup() -> Bool {
         return true
     }
     
-    override func view() -> UIView! {
+    override public func view() -> UIView! {
         return RNPlayerView()
     }
     
     // MARK: - Commands
-    @objc override func constantsToExport() -> [AnyHashable : Any]! {
+    @objc override public func constantsToExport() -> [AnyHashable : Any]! {
         return [
             "Commands": [
                 "play": 0,
