@@ -167,18 +167,18 @@ final public class RNPlayerView: UIView {
     }
     
     // MARK: - Commands
-  func play() { vlPlayer?.play() }
-  func pause() { vlPlayer?.pause() }
-  func seekTo(_ ms: Int) { }
-  func destroyPlayer() {
-    vlPlayer?.videoPlayerDelegate = nil
-    vlPlayer?.destroy()
-    vlPlayer?.getVideoPlayerView()?.removeFromSuperview()
-    playerView?.removeFromSuperview()
-    playerView = nil
+    public func play() { vlPlayer?.play() }
+    public func pause() { vlPlayer?.pause() }
+    public func seekTo(_ ms: Int) { }
+    public func destroyPlayer() {
+        vlPlayer?.videoPlayerDelegate = nil
+        vlPlayer?.destroy()
+        vlPlayer?.getVideoPlayerView()?.removeFromSuperview()
+        playerView?.removeFromSuperview()
+        playerView = nil
   }
   
-  func sendVideoStateEvent(isPlaying: Bool) {
+   public func sendVideoStateEvent(isPlaying: Bool) {
           // Check if React Native has assigned a listener to this prop
           if let callback = onVideoStateChange {
               // Send the data. Keys must match your JS expectations.
@@ -188,15 +188,15 @@ final public class RNPlayerView: UIView {
   
 }
 extension RNPlayerView: VideoPlaybackDelegate {
-  func videoPause(timestamp: Double, playerTag: String) {
+  public func videoPause(timestamp: Double, playerTag: String) {
     sendVideoStateEvent(isPlaying: false)
   }
   
-  func videoResume(timestamp: Double, playerTag: String) {
+  public func videoResume(timestamp: Double, playerTag: String) {
     sendVideoStateEvent(isPlaying: true)
   }
   
-  func videoStarted(timestamp: Double, playerTag: String) {
+  public func videoStarted(timestamp: Double, playerTag: String) {
     sendVideoStateEvent(isPlaying: true)
   }
 }
