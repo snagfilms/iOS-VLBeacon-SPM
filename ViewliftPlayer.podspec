@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
-  s.name             = 'VLBeaconPlayer'
+  s.name             = 'ViewliftPlayer'
   s.version          = '1.0.0'
-  s.summary          = 'VLBeacon SDK for beacon tracking and analytics'
+  s.summary          = 'ViewliftPlayer SDK for beacon tracking and analytics'
   s.homepage         = 'https://github.com/snagfilms/iOS-VLBeacon-SPM'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.authors          = { "VL Player" => "techsupport@viewlift.com" }
@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
   s.tvos.deployment_target = '13.0'
   s.swift_versions = ['5.8', '5.9']  # Don't use 6.0
   
-  s.source_files = 'Source/VLBeaconPlayer/**/*.{swift,h,m}'
+  s.source_files = 'Source/ViewliftPlayer/**/*.{swift,h,m}'
   
   s.frameworks = 'Foundation'
   s.ios.frameworks = 'UIKit', 'CoreLocation'
