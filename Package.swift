@@ -4,19 +4,19 @@
 import PackageDescription
 
 let package = Package(
-    name: "VLBeaconPlayer",
+    name: "ViewliftPlayer",
     platforms: [
         .iOS(.v14),
         .tvOS(.v13)
     ],
     products: [
         .library(
-            name: "VLBeaconPlayer",
-            targets: ["VLBeaconPlayer"]),
+            name: "ViewliftPlayer",
+            targets: ["ViewliftPlayer"]),
     ],
     targets: [
         .target(
-            name: "VLBeaconPlayer")
+            name: "ViewliftPlayer")
     ],
     swiftLanguageVersions: [.v5]
 )
