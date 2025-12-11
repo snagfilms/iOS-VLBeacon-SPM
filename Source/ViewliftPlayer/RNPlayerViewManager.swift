@@ -25,7 +25,8 @@ final public class RNPlayerViewManager: RCTViewManager {
             "Commands": [
                 "play": 0,
                 "pause": 1,
-                "seekTo": 2
+                "seekTo": 2,
+                "goFullScreen": 3
             ]
         ]
     }
@@ -53,9 +54,14 @@ final public class RNPlayerViewManager: RCTViewManager {
                   targetView.pause()
 
                 } else if action == "releaseVlplayer" {
+                  print("releaseVlplayer called")
                   targetView.destroyPlayer()
 
                 }
+                else if action == "goFullScreen" {
+                  let isFullScreen = args[0] as? Bool ?? false
+                   targetView.goFullScreen(isFullScreen)
+                 }
               } else {
                   print("Still could not find view with tag: \(reactTag)")
               }

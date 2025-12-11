@@ -25,6 +25,7 @@ final public class RNPlayerView: UIView {
   let vm = FeedVCVM()
   var verticalPlayer: UIViewController?
   @objc var onVideoStateChange: RCTDirectEventBlock?
+  @objc var onFullScreen: RCTDirectEventBlock?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -49,7 +50,42 @@ final public class RNPlayerView: UIView {
         loader?.removeFromSuperview()
         loader = nil
     }
+
+    func goFullScreen(_ fullScreen: Bool) {
+        vlPlayer?.goFullScreen(fullScreen)
+    }
     
+    public func onFullScreenChange(
+        currentTime: Double,
+        isFullScreen: Bool,
+        playerTag: String
+    ) {
+   if isFullScreen {
+    setLandscape()
+   } else {
+    setPortrait()
+   }
+   if let callback = onFullScreen {
+     callback(["isFullScreen": isFullScreen, "currentTime": currentTime])
+   }
+ }
+ private func setLandscape() {
+   if #available(iOS 16.0, *) {
+     let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+     windowScene?.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape))
+   } else {
+     UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
+   }
+ }
+ private func setPortrait() {
+   if #available(iOS 16.0, *) {
+     let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+     windowScene?.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
+   } else {
+     UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+   }
+ }
+
     private func createVLPlayer() -> VLPlayer {
       
             return VLPlayer(playerType: .default)
@@ -95,7 +131,13 @@ final public class RNPlayerView: UIView {
     }
     
     private func getPlayerFeaturesSupported() -> VLPlayerLib.VLPlayer.VLPlayerFeatureSupported {
-      return VLPlayerLib.VLPlayer.VLPlayerFeatureSupported(appMacrosList: nil, customPlayerControlsColor: nil, chromecastCustomReceiver: nil, controlsVisibility: .auto)
+        return VLPlayerLib.VLPlayer
+            .VLPlayerFeatureSupported(
+                appMacrosList: nil,
+                shouldStartPictureInPictureInline: true, customPlayerControlsColor: nil,
+                chromecastCustomReceiver: nil,
+                controlsVisibility: .auto
+            )
     }
     
     @MainActor
@@ -187,6 +229,7 @@ final public class RNPlayerView: UIView {
       }
   
 }
+
 extension RNPlayerView: VideoPlaybackDelegate {
   public func videoPause(timestamp: Double, playerTag: String) {
     sendVideoStateEvent(isPlaying: false)
