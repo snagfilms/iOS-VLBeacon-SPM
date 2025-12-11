@@ -17,4 +17,5 @@ RCT_EXTERN_METHOD(performCommand:(nonnull NSNumber *)reactTag
                   args:(nonnull NSArray *)args
                   action:(nonnull NSString *) action)
 RCT_EXPORT_VIEW_PROPERTY(onVideoStateChange, RCTDirectEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onFullScreen, RCTDirectEventBlock)
 @end

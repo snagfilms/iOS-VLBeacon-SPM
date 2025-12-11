@@ -22,10 +22,10 @@ final public class RNPlayerView: UIView {
             Task { await setupPlayer() }
         }
     }
-  let vm = FeedVCVM()
-  var verticalPlayer: UIViewController?
-  @objc var onVideoStateChange: RCTDirectEventBlock?
-  @objc var onFullScreen: RCTDirectEventBlock?
+    let vm = FeedVCVM()
+    var verticalPlayer: UIViewController?
+    @objc var onVideoStateChange: RCTDirectEventBlock?
+    @objc var onFullScreen: RCTDirectEventBlock?
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -50,7 +50,7 @@ final public class RNPlayerView: UIView {
         loader?.removeFromSuperview()
         loader = nil
     }
-
+    
     func goFullScreen(_ fullScreen: Bool) {
         vlPlayer?.goFullScreen(fullScreen)
     }
@@ -60,39 +60,40 @@ final public class RNPlayerView: UIView {
         isFullScreen: Bool,
         playerTag: String
     ) {
-   if isFullScreen {
-    setLandscape()
-   } else {
-    setPortrait()
-   }
-   if let callback = onFullScreen {
-     callback(["isFullScreen": isFullScreen, "currentTime": currentTime])
-   }
- }
- private func setLandscape() {
-   if #available(iOS 16.0, *) {
-     let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
-     windowScene?.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape))
-   } else {
-     UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
-   }
- }
- private func setPortrait() {
-   if #available(iOS 16.0, *) {
-     let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
-     windowScene?.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
-   } else {
-     UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
-   }
- }
-
+        if isFullScreen {
+            setLandscape()
+        } else {
+            setPortrait()
+        }
+        if let callback = onFullScreen {
+            callback(["isFullScreen": isFullScreen, "currentTime": currentTime])
+        }
+    }
+    private func setLandscape() {
+        if #available(iOS 16.0, *) {
+            let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+            windowScene?.requestGeometryUpdate(.iOS(interfaceOrientations: .landscape))
+        } else {
+            UIDevice.current.setValue(UIInterfaceOrientation.landscapeRight.rawValue, forKey: "orientation")
+        }
+    }
+    
+    private func setPortrait() {
+        if #available(iOS 16.0, *) {
+            let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
+            windowScene?.requestGeometryUpdate(.iOS(interfaceOrientations: .portrait))
+        } else {
+            UIDevice.current.setValue(UIInterfaceOrientation.portrait.rawValue, forKey: "orientation")
+        }
+    }
+    
     private func createVLPlayer() -> VLPlayer {
-      
-            return VLPlayer(playerType: .default)
+        
+        return VLPlayer(playerType: .default)
     }
     
     private func getPlaybackSourceType(from data: NSDictionary) -> VLPlayer.PlaybackSourceType? {
-      if let streamUrl = data["videoUrl"] as? String, streamUrl.isEmpty == false {
+        if let streamUrl = data["videoUrl"] as? String, streamUrl.isEmpty == false {
             let isLive = data["isLive"] as? Bool ?? false
             let isDVR = data["isDVR"] as? Bool ?? false
             
@@ -118,15 +119,15 @@ final public class RNPlayerView: UIView {
             )
             return .contentPlayback(config)
         }
-            
-      let streamType = VLPlayer.DirectStreamType(
-          url: "https://prodamdnewsencoding.akamaized.net/NBC_News_Digital/n_cabrera_rubin_khardori_capitol_rioter_charged_with_threatening_hakeem_jeffries_251021/1/abs/index.m3u8",
-          streamConfig: VLPlayer.StreamConfig(isLive: false, isDVR: false, isSSAIEnabled: true),
-          drmconfig: nil
-      )
-      
-      let playbackConfig = VLPlayer.DirectStreamPlaybackConfig(stream: streamType)
-      return .directStream(playbackConfig)
+        
+        let streamType = VLPlayer.DirectStreamType(
+            url: "https://prodamdnewsencoding.akamaized.net/NBC_News_Digital/n_cabrera_rubin_khardori_capitol_rioter_charged_with_threatening_hakeem_jeffries_251021/1/abs/index.m3u8",
+            streamConfig: VLPlayer.StreamConfig(isLive: false, isDVR: false, isSSAIEnabled: true),
+            drmconfig: nil
+        )
+        
+        let playbackConfig = VLPlayer.DirectStreamPlaybackConfig(stream: streamType)
+        return .directStream(playbackConfig)
         
     }
     
@@ -142,70 +143,70 @@ final public class RNPlayerView: UIView {
     
     @MainActor
     private func setupPlayer() async {
-      
-      guard let data = videoSourceData else { return }
+        
+        guard let data = videoSourceData else { return }
         
         showLoader()
         
         let vlBaseUrl = data["apiBaseURL"] as? String ?? ""
         let featureSupported = getPlayerFeaturesSupported()
         
-      let type = data["playerType"] as? String
-      if type == "VERTICAL_VL_PLAYER" {
-        let verticalVC = VLFeedPlayer().setSource(delegate: vm,
-                                                            config: vm.config,
-                                                            baseUrl: "https://livgolfplus.staging.api.viewlift.com",
-                                                            authToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbm9ueW1vdXNJZCI6ImI2NTAzMjgzZDNjOTJiMDE0ZmExNzNmZGU1MGQ0ODJkN2FlYWI3MDc4Y2U2OGMxODQwZTFlY2U0MzYwMzhkN2MiLCJjb3VudHJ5Q29kZSI6IklOIiwiZGV2aWNlSWQiOiJicm93c2VyLTQxMmE5MjJjLTk3NWMtNmUyYi1kZWUwLTYzNGJmNzdmNzA5MSIsImV4cCI6MTc5Njc0NzAyOSwiaWF0IjoxNzY1MjExMDI5LCJpZCI6IjMxYWIzMjYwLTg0YWEtNDc2NC1hZWYwLTI1NzYxZjFmZGIzNSIsImlwYWRkcmVzcyI6IjEyMi4xNjEuNDguMTg2IiwiaXBhZGRyZXNzZXMiOiIxMjIuMTYxLjQ4LjE4NiwxMC4xNjAuMS4yNDciLCJwb3N0YWxjb2RlIjoiMTEwMDkxIiwicHJvdmlkZXIiOiJ2aWV3bGlmdCIsInNpdGUiOiJsaXYtZ29sZiIsInNpdGVJZCI6IjllZDdkZWUwLWM3MTktMTFlYy1iYzI1LWExOTVjMmEzNDM1NyIsInVzZXJJZCI6IjMxYWIzMjYwLTg0YWEtNDc2NC1hZWYwLTI1NzYxZjFmZGIzNSIsInVzZXJuYW1lIjoiYW5vbnltb3VzIn0.BvjDyUU06pEVo4EYPLUE6N9TcMlq2QokmR-uW_m9Z3w")!
-        self.verticalPlayer = verticalVC
-        if let verticalView = verticalVC.view {
-          
-          verticalView.frame = self.bounds
-          verticalView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-          verticalView.isUserInteractionEnabled = true
-          self.addSubview(verticalView)
-        }
-        
-      } else {
-        let player = createVLPlayer()
-        vlPlayer = player
-        player.videoPlayerDelegate = self
-        guard let sourceType = getPlaybackSourceType(from: data) else {
-          print("❌ Invalid playback source type")
-          return
-        }
-        
-        
-        player.setSource(
-          type: sourceType,
-          vlPlayerTag: "1",
-          customControlsView: nil,
-          adUrl: nil,
-          playerFeaturesSupported: featureSupported,
-          nextPlaybackList: nil
-        ) { [weak self] isSuccess, playerView, contentResponse in
-          guard let self = self else { return }
-          DispatchQueue.main.async {
-            self.hideLoader()
-            
-            if let pv = playerView {
-              // remove previous
-              self.playerView?.removeFromSuperview()
-              
-              // add SDK player view
-              pv.frame = self.bounds
-              pv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-              pv.isUserInteractionEnabled = true
-              self.addSubview(pv)
-              self.playerView = pv
-              
-              
-              print("✅ [RNPlayerView] Player view added successfully")
-            } else {
-              print("❌ [RNPlayerView] Failed to load player view")
+        let type = data["playerType"] as? String
+        if type == "VERTICAL_VL_PLAYER" {
+            let verticalVC = VLFeedPlayer().setSource(delegate: vm,
+                                                      config: vm.config,
+                                                      baseUrl: "https://livgolfplus.staging.api.viewlift.com",
+                                                      authToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhbm9ueW1vdXNJZCI6ImI2NTAzMjgzZDNjOTJiMDE0ZmExNzNmZGU1MGQ0ODJkN2FlYWI3MDc4Y2U2OGMxODQwZTFlY2U0MzYwMzhkN2MiLCJjb3VudHJ5Q29kZSI6IklOIiwiZGV2aWNlSWQiOiJicm93c2VyLTQxMmE5MjJjLTk3NWMtNmUyYi1kZWUwLTYzNGJmNzdmNzA5MSIsImV4cCI6MTc5Njc0NzAyOSwiaWF0IjoxNzY1MjExMDI5LCJpZCI6IjMxYWIzMjYwLTg0YWEtNDc2NC1hZWYwLTI1NzYxZjFmZGIzNSIsImlwYWRkcmVzcyI6IjEyMi4xNjEuNDguMTg2IiwiaXBhZGRyZXNzZXMiOiIxMjIuMTYxLjQ4LjE4NiwxMC4xNjAuMS4yNDciLCJwb3N0YWxjb2RlIjoiMTEwMDkxIiwicHJvdmlkZXIiOiJ2aWV3bGlmdCIsInNpdGUiOiJsaXYtZ29sZiIsInNpdGVJZCI6IjllZDdkZWUwLWM3MTktMTFlYy1iYzI1LWExOTVjMmEzNDM1NyIsInVzZXJJZCI6IjMxYWIzMjYwLTg0YWEtNDc2NC1hZWYwLTI1NzYxZjFmZGIzNSIsInVzZXJuYW1lIjoiYW5vbnltb3VzIn0.BvjDyUU06pEVo4EYPLUE6N9TcMlq2QokmR-uW_m9Z3w")!
+            self.verticalPlayer = verticalVC
+            if let verticalView = verticalVC.view {
+                
+                verticalView.frame = self.bounds
+                verticalView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                verticalView.isUserInteractionEnabled = true
+                self.addSubview(verticalView)
             }
-          }
+            
+        } else {
+            let player = createVLPlayer()
+            vlPlayer = player
+            player.videoPlayerDelegate = self
+            guard let sourceType = getPlaybackSourceType(from: data) else {
+                print("❌ Invalid playback source type")
+                return
+            }
+            
+            
+            player.setSource(
+                type: sourceType,
+                vlPlayerTag: "1",
+                customControlsView: nil,
+                adUrl: nil,
+                playerFeaturesSupported: featureSupported,
+                nextPlaybackList: nil
+            ) { [weak self] isSuccess, playerView, contentResponse in
+                guard let self = self else { return }
+                DispatchQueue.main.async {
+                    self.hideLoader()
+                    
+                    if let pv = playerView {
+                        // remove previous
+                        self.playerView?.removeFromSuperview()
+                        
+                        // add SDK player view
+                        pv.frame = self.bounds
+                        pv.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                        pv.isUserInteractionEnabled = true
+                        self.addSubview(pv)
+                        self.playerView = pv
+                        
+                        
+                        print("✅ [RNPlayerView] Player view added successfully")
+                    } else {
+                        print("❌ [RNPlayerView] Failed to load player view")
+                    }
+                }
+            }
         }
-      }
     }
     
     // MARK: - Commands
@@ -218,28 +219,28 @@ final public class RNPlayerView: UIView {
         vlPlayer?.getVideoPlayerView()?.removeFromSuperview()
         playerView?.removeFromSuperview()
         playerView = nil
-  }
-  
-   public func sendVideoStateEvent(isPlaying: Bool) {
-          // Check if React Native has assigned a listener to this prop
-          if let callback = onVideoStateChange {
-              // Send the data. Keys must match your JS expectations.
-              callback(["isPlaying": isPlaying])
-          }
-      }
-  
+    }
+    
+    public func sendVideoStateEvent(isPlaying: Bool) {
+        // Check if React Native has assigned a listener to this prop
+        if let callback = onVideoStateChange {
+            // Send the data. Keys must match your JS expectations.
+            callback(["isPlaying": isPlaying])
+        }
+    }
+    
 }
 
 extension RNPlayerView: VideoPlaybackDelegate {
-  public func videoPause(timestamp: Double, playerTag: String) {
-    sendVideoStateEvent(isPlaying: false)
-  }
-  
-  public func videoResume(timestamp: Double, playerTag: String) {
-    sendVideoStateEvent(isPlaying: true)
-  }
-  
-  public func videoStarted(timestamp: Double, playerTag: String) {
-    sendVideoStateEvent(isPlaying: true)
-  }
+    public func videoPause(timestamp: Double, playerTag: String) {
+        sendVideoStateEvent(isPlaying: false)
+    }
+    
+    public func videoResume(timestamp: Double, playerTag: String) {
+        sendVideoStateEvent(isPlaying: true)
+    }
+    
+    public func videoStarted(timestamp: Double, playerTag: String) {
+        sendVideoStateEvent(isPlaying: true)
+    }
 }
