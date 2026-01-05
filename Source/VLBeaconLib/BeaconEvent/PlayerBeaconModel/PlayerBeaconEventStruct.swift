@@ -61,10 +61,10 @@ public struct PlayerBeaconEventStruct {
     var program_start_time: String?
     var program_end_time: String?
     var islivestream: Bool?
-    
+    var userConsent: Bool?
     var additionaldata: [String: Any]?
     
-    public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolution: CGRect? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, siteId: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil, tokenIdentity: TokenIdentity?, programId: String? = nil, title: String? = nil, programStartTime: String? = nil, programEndTime: String? = nil, islivestream: Bool? = nil) {
+    public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolution: CGRect? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, siteId: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil, tokenIdentity: TokenIdentity?, programId: String? = nil, title: String? = nil, programStartTime: String? = nil, programEndTime: String? = nil, islivestream: Bool? = nil, userConsent: Bool? = nil) {
         
         if NetworkStatus.sharedInstance.isNetworkAvailable() {
             guard let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity else { return }
@@ -126,6 +126,7 @@ public struct PlayerBeaconEventStruct {
         self.guid = guid
         self.appversion = appversion
         self.duration = duration
+        self.userConsent = userConsent
         
         if let programStartTimeCheck = programStartTime, !programStartTimeCheck.isEmpty {
             self.program_start_time = programStartTimeCheck
