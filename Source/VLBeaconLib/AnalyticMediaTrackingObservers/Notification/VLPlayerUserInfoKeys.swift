@@ -14,6 +14,7 @@ public struct VLPlayerUserInfoKeys {
     public static let adInfo = "adInfo"
     public static let chapterInfo = "chapterInfo"
     public static let userIdentity = "userIdentity"
+    public static let sessionVideoId = "sessionVideoId"
     
     // MARK: - Time Keys
     public static let currentTime = "currentTime"
@@ -23,6 +24,9 @@ public struct VLPlayerUserInfoKeys {
     public static let shouldResume = "shouldResume"
     public static let closeCaptionlanguage = "closeCaptionlanguage"
     public static let audioChange = "audioChange"
+    public static let frameRateChange = "frameRateChange"
+    public static let analyticsSeekStartTime = "analyticsSeekStartTime"
+    public static let analyticsSeekEndTime = "analyticsSeekEndTime"
     
     // MARK: - Error Keys
     public static let errorMessage = "errorMessage"
@@ -31,12 +35,16 @@ public struct VLPlayerUserInfoKeys {
     // MARK: - UI State Keys
     public static let isFullScreen = "isFullScreen"
     public static let trackOptions = "trackOptions"
+    public static let chapterTimeline = "chapterTimeline"
     
     // MARK: - Analytics Keys
     public static let analyticsContentInfo = "analyticsContentInfo"
     public static let analyticsPlayerInfo = "analyticsPlayerInfo"
     public static let analyticsAvPlayer = "analyticsAvPlayer"
     public static let analyticsTVProviderInfo = "analyticsTVProviderInfo"
+    public static let analyticsOtherInfo = "analyticsOtherInfo"
+    public static let analyticsUserInfo = "analyticsUserInfo"
+    public static let analyticsAdsLoaderInfo = "analyticsAdsLoaderInfo"
     
     private init() {}
 }
