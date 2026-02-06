@@ -18,6 +18,7 @@ public struct VLPlayerUserInfoKeys {
     
     // MARK: - Time Keys
     public static let currentTime = "currentTime"
+    public static let playheadInfo = "playheadInfo"
     public static let endTime = "endTime"
     public static let startTime = "startTime"
     public static let newTime = "newTime"
