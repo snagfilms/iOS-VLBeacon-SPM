@@ -58,6 +58,14 @@ public struct VLPlayerNotifications {
         notificationName("vlplayer.video.paused")
     }
     
+    public static var adPaused: Notification.Name {
+        notificationName("vlplayer.ad.paused")
+    }
+    
+    public static var adResumed: Notification.Name {
+        notificationName("vlplayer.ad.resumed")
+    }
+    
     public static var videoComplete: Notification.Name {
         notificationName("vlplayer.video.complete")
     }

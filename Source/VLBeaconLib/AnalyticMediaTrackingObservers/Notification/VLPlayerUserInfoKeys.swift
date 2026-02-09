@@ -28,6 +28,7 @@ public struct VLPlayerUserInfoKeys {
     public static let frameRateChange = "frameRateChange"
     public static let analyticsSeekStartTime = "analyticsSeekStartTime"
     public static let analyticsSeekEndTime = "analyticsSeekEndTime"
+    public static let currentAdElapsedDuration = "currentAdElapsedDuration"
     
     // MARK: - Error Keys
     public static let errorMessage = "errorMessage"
