@@ -24,6 +24,7 @@ public enum PlayerBeaconEventEnum : BeaconEventNameProtocol, Equatable{
     case resumePlayback // When the user clicks to resume playback from where they left off
     case seekForward // When the user clicks to seek forward
     case seekBackward //When the user clicks to seek backward
+    case mvSelection
     
     case custom(eventName: String)
     
@@ -59,6 +60,8 @@ public enum PlayerBeaconEventEnum : BeaconEventNameProtocol, Equatable{
             return "SEEK_FORWARD"
         case .seekBackward:
             return "SEEK_BACKWARD"
+        case .mvSelection:
+            return "MV_SELECTION"
         case .custom(let eventName):
             return eventName
         }
