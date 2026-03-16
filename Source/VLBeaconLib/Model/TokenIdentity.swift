@@ -8,16 +8,16 @@
 import Foundation
 
 public struct TokenIdentity: Decodable {
-    public var userId: String?
-    public var emailId: String?
-    public var phoneNumber: String?
-    public var siteName: String?
-    public var siteId: String?
-    public var countryCode: String?
-    public var deviceId: String?
-    public var anonymousId: String?
+    var userId: String?
+    var emailId: String?
+    var phoneNumber: String?
+    var siteName: String?
+    var siteId: String?
+    var countryCode: String?
+    var deviceId: String?
+    var anonymousId: String?
 
-    public enum CodingKeys: String, CodingKey {
+    enum CodingKeys: String, CodingKey {
         case userId
         case emailId = "email"
         case phoneNumber
@@ -27,24 +27,4 @@ public struct TokenIdentity: Decodable {
         case deviceId
         case anonymousId
     }
-
-    public init(
-    userId: String?,
-    emailId: String?,
-    phoneNumber: String?,
-    siteName: String?,
-    siteId: String?,
-    countryCode: String?,
-    deviceId: String?,
-    anonymousId: String?
-) {
-    self.userId = userId
-    self.emailId = emailId
-    self.phoneNumber = phoneNumber
-    self.siteName = siteName
-    self.siteId = siteId
-    self.countryCode = countryCode
-    self.deviceId = deviceId
-    self.anonymousId = anonymousId
-}
 }
