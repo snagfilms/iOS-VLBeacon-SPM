@@ -12,6 +12,7 @@ let package = Package(
     products: [
         .library(
             name: "VLBeaconLib",
+            type: .dynamic,
             targets: ["VLBeaconLib"]),
     ],
     targets: [
