@@ -10,9 +10,12 @@ let package = Package(
         .tvOS(.v13)
     ],
     products: [
+        // Default static library. Do not use type: .dynamic — when ios-analytics-sdk
+        // archives provider xcframeworks against dynamic VLBeacon, the linker records
+        // @rpath/VLBeaconLib_<hash>_PackageProduct.framework, which does not match the
+        // VLBeaconLib.framework the app embeds from SPM and causes dyld crashes.
         .library(
             name: "VLBeaconLib",
-            type: .dynamic,
             targets: ["VLBeaconLib"]),
     ],
     targets: [
