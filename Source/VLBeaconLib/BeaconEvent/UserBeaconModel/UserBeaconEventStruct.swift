@@ -29,44 +29,22 @@ public struct UserBeaconEventStruct {
     public init(eventName: UserBeaconEventEnum, userId: String? = nil, profileId: String? = nil, siteId: String? = nil, pfm: String? = nil, etstamp: String? = nil, environment: String? = nil, appversion: String? = nil, source: String?, eventData: BeaconEventPayloadProtocol? = nil, additionalData: [String : Any]? = nil, tokenIdentity: TokenIdentity?) {
         
         let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity
+        let beaconInstance = VLBeacon.getInstance()
         
         self.ename = eventName.getBeaconEventNameString()
         self.profid = profileId ?? ""
-        
-        if let userID = tokenId?.userId {
-            self.uid = userID
-        } else {
-            self.uid = userId
-        }
-        
-        if let deviceID = tokenId?.deviceId {
-            self.deviceid = deviceID
-        } else {
-            self.deviceid = Utility.sharedInstance.getUUID()
-        }
-        
-        if let siteID = tokenId?.siteId {
-            self.siteid = siteID
-        } else {
-            self.siteid = siteId
-        }
-        
-        if let source{
-            self.source = source
-        } else {
-            self.source = "VLBeacon"
-        }
-        
-        self.pfm = Utility.sharedInstance.getPlatform()
-        
-        self.appversion = Utility.sharedInstance.getAppVersion()
-        
-        self.etstamp = Utility.sharedInstance.getCurrentTimestampInGMT()
-        
+        self.uid = tokenId?.userId ?? userId ?? ""
+        self.deviceid = tokenId?.deviceId ?? Utility.sharedInstance.getUUID()
+        self.siteid = tokenId?.siteId ?? siteId ?? ""
+        self.source = source ?? "VLBeacon"
+        self.pfm = pfm ?? Utility.sharedInstance.getPlatform()
+        self.appversion = appversion ?? Utility.sharedInstance.getAppVersion()
+        self.etstamp = etstamp ?? Utility.sharedInstance.getCurrentTimestampInGMT()
+        self.environment = environment ?? beaconInstance.environment
+        self.ref = ""
+        self.url = ""
         self.eventdata = eventData?.toDictionary()
-        
         self.additionaldata = additionalData
-        
     }
 }
 
