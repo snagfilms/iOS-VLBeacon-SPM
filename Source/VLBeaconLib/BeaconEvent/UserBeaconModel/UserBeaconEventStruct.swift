@@ -8,7 +8,6 @@
 import Foundation
 
 public struct UserBeaconEventStruct {
-    
     var ename: String
     var uid: String!
     var profid: String!
@@ -26,8 +25,20 @@ public struct UserBeaconEventStruct {
     var anonymousuid: String?
     var eventType: String?
     
-    public init(eventName: UserBeaconEventEnum, userId: String? = nil, profileId: String? = nil, siteId: String? = nil, pfm: String? = nil, etstamp: String? = nil, environment: String? = nil, appversion: String? = nil, source: String?, eventData: BeaconEventPayloadProtocol? = nil, additionalData: [String : Any]? = nil, tokenIdentity: TokenIdentity?) {
-        
+    public init(
+        eventName: UserBeaconEventEnum,
+        userId: String? = nil,
+        profileId: String? = nil,
+        siteId: String? = nil,
+        pfm: String? = nil,
+        etstamp: String? = nil,
+        environment: String? = nil,
+        appversion: String? = nil,
+        source: String?,
+        eventData: BeaconEventPayloadProtocol? = nil,
+        additionalData: [String : Any]? = nil,
+        tokenIdentity: TokenIdentity?
+    ) {
         let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity
         
         self.ename = eventName.getBeaconEventNameString()
@@ -51,7 +62,7 @@ public struct UserBeaconEventStruct {
             self.siteid = siteId
         }
         
-        if let source{
+        if let source {
             self.source = source
         } else {
             self.source = "VLBeacon"
@@ -66,21 +77,12 @@ public struct UserBeaconEventStruct {
         self.eventdata = eventData?.toDictionary()
         
         self.additionaldata = additionalData
-        
     }
 }
 
-extension UserBeaconEventStruct: BeaconEventBodyProtocol {
-    
-    public func triggerEvents(authToken: String, beaconInstance: VLBeacon) {
-        guard let beaconBaseURL = beaconInstance.userBeaconUrl else { return }
-        
-        DispatchQueue.global(qos: .utility).async {
-            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL)
-        }
-    }
-    
-    public func addBeaconInDBQuery() -> String? {
+// MARK: - Public methods
+public extension UserBeaconEventStruct {
+    func addBeaconInDBQuery() -> String? {
         var queryToAddBeaconEvent: String?
         
         let additionalDataString: String? = additionaldata?.jsonString()
@@ -90,5 +92,16 @@ extension UserBeaconEventStruct: BeaconEventBodyProtocol {
         queryToAddBeaconEvent = "insert into \(BeaconDBConstants().USERTABLENAME) (ename, uid, profid, siteid, pfm, etstamp, environment, deviceid, ref, url, appversion, source, eventData, additionalData) values('\(self.ename )','\(self.uid ?? "")','\(profid ?? "")','\(self.siteid ?? "")','\(self.pfm ?? "")','\(self.etstamp ?? "")','\(self.environment ?? "")','\(self.deviceid ?? "")','\(self.ref ?? "")','\(self.url ?? "")','\(self.appversion ?? "")','\(self.source ?? "")','\(eventDataString ?? "")','\(additionalDataString ?? "")')"
         
         return queryToAddBeaconEvent
+    }
+}
+
+// MARK: - BeaconEventBodyProtocol implementation
+extension UserBeaconEventStruct: BeaconEventBodyProtocol {
+    public func triggerEvents(authToken: String, beaconInstance: VLBeacon) {
+        guard let beaconBaseURL = beaconInstance.userBeaconUrl else { return }
+        
+        DispatchQueue.global(qos: .utility).async {
+            DataManger().postBeaconEvents(beaconStructBody: self, authenticationToken: authToken, baseUrl: beaconBaseURL)
+        }
     }
 }
