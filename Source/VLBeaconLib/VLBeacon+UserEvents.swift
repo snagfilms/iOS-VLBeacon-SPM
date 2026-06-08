@@ -7,6 +7,37 @@ extension VLBeacon {
     return true
   }
 
+  /// Convenience for authentication beacon events — constructs `AuthenticationPayload`
+  /// inside VLBeaconLib so callers never allocate the struct across module boundaries
+  /// (avoids `EXC_BAD_ACCESS` when VLBeaconLib is a dynamic framework).
+  public func submitAuthenticationBeaconEvent(
+    eventName: UserBeaconEventEnum,
+    source: String? = "VLAuthentication",
+    type: AuthType? = nil,
+    subType: AuthSubType? = nil,
+    email: String? = nil,
+    phoneNumber: String? = nil,
+    mvpd: String? = nil,
+    existingUser: Bool? = nil,
+    additionalData: [String: String]? = nil
+  ) {
+    let payload = AuthenticationPayload(
+      type: type,
+      subType: subType,
+      email: email,
+      phoneNumber: phoneNumber,
+      mvpd: mvpd,
+      existingUser: existingUser,
+      additionalData: additionalData,
+      tokenIdentity: tokenIdentity
+    )
+    submitUserBeaconEvent(
+      eventName: eventName,
+      source: source,
+      eventData: payload
+    )
+  }
+
   /// Builds and submits a user beacon event inside VLBeaconLib so callers never construct `UserBeaconEventStruct` across module boundaries.
   public func submitUserBeaconEvent(
     eventName: UserBeaconEventEnum,
