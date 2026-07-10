@@ -33,6 +33,8 @@ public struct VLPlayerUserInfoKeys {
     // MARK: - Error Keys
     public static let errorMessage = "errorMessage"
     public static let isFatal = "isFatal"
+    public static let errorCode = "errorCode"
+    public static let vl_errorCode = "vl_errorCode"
     
     // MARK: - UI State Keys
     public static let isFullScreen = "isFullScreen"
@@ -47,6 +49,7 @@ public struct VLPlayerUserInfoKeys {
     public static let analyticsOtherInfo = "analyticsOtherInfo"
     public static let analyticsUserInfo = "analyticsUserInfo"
     public static let analyticsAdsLoaderInfo = "analyticsAdsLoaderInfo"
+    public static let customParameters = "customParameters"
     
     private init() {}
 }

@@ -8,7 +8,7 @@
 import Foundation
 @_implementationOnly import SQLite3
 
-class BeaconDBManager {
+final class BeaconDBManager {
     /*!
      * @brief Path the documents directory.
      */
@@ -25,8 +25,11 @@ class BeaconDBManager {
     var arrColumnNames = [Any]()
     var affectedRows : Int = 01
     var lastInsertedRowID : Double  = 01
-    
-    func intializeData( dbFilename: String, tableName: String,  tableColumnsQuery: String)  {
+}
+
+// MARK: - Internal methods
+extension BeaconDBManager {
+    func intializeData( dbFilename: String, tableName: String, tableColumnsQuery: String)  {
         // Set the documents directory path to the documentsDirectory property.
         let paths: [String] = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
         documentsDirectory = paths[0]
@@ -41,32 +44,49 @@ class BeaconDBManager {
         let _database: String = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(dbFileName).absoluteString
         let fileMngr = FileManager.default
         //Check if file already exists. If yes, do not create new.
-        if fileMngr.fileExists(atPath: _database) == false {
-            // Create a sqlite object.
-            var _DB: OpaquePointer?
-//            let dbpath = _database.utf8
-            if sqlite3_open(_database, &_DB) == SQLITE_OK {
-                var errorMassage:String = ""
-                if let error = sqlite3_errmsg(_DB){
-                    errorMassage = String(cString: error)
-                }
-                let sql_statement = "CREATE TABLE IF NOT EXISTS \(tableName) (\(tableColumnsQuery))"
-                if sqlite3_exec(_DB, sql_statement, nil, nil, nil) != SQLITE_OK {
-                    #if DEBUG
-                    debugPrint("error creating table: \(errorMassage)")
-                    #endif
-                }
-                sqlite3_close(_DB)
+        guard fileMngr.fileExists(atPath: _database) == false else { return }
+        // Create a sqlite object.
+        var _DB: OpaquePointer?
+        //            let dbpath = _database.utf8
+        if sqlite3_open(_database, &_DB) == SQLITE_OK {
+            var errorMassage:String = ""
+            
+            if let error = sqlite3_errmsg(_DB){
+                errorMassage = String(cString: error)
             }
-            else {
-                #if DEBUG
-                debugPrint("Error to open/create the table")
-                #endif
+            
+            let sql_statement = "CREATE TABLE IF NOT EXISTS \(tableName) (\(tableColumnsQuery))"
+            
+            if sqlite3_exec(_DB, sql_statement, nil, nil, nil) != SQLITE_OK {
+#if DEBUG
+                debugPrint("error creating table: \(errorMassage)")
+#endif
             }
+            sqlite3_close(_DB)
+        } else {
+#if DEBUG
+            debugPrint("Error to open/create the table")
+#endif
         }
     }
     
-   private func runQuery(_ query: String, isQueryExecutable queryExecutable: Bool) {
+    func loadData(fromDB query: String) -> Array<Dictionary<String,String>> {
+        // Run the query and indicate that is not executable.
+        // The query string is converted to a char* object.
+        runQuery(query, isQueryExecutable: false)
+        // Returned the loaded results.
+        return (results)
+    }
+    
+    func execute(_ query: String) {
+        // Run the query and indicate that is executable.
+        runQuery(query, isQueryExecutable: true)
+    }
+}
+
+// MARK: - Private methods
+private extension BeaconDBManager {
+    func runQuery(_ query: String, isQueryExecutable queryExecutable: Bool) {
         // Create a sqlite object.
         var sqlite3Database: OpaquePointer?
         // Set the database file path.
@@ -76,12 +96,14 @@ class BeaconDBManager {
             results.removeAll()
             // arrResults = nil
         }
+        
         arrResults = [Any]()
         // Initialize the column names array.
         if !arrColumnNames.isEmpty {
             arrColumnNames.removeAll()
             //arrColumnNames = nil
         }
+        
         //var result:Array<Dictionary<String,AnyObject>>=[]
         arrColumnNames = [Any]()
         // Open the database.
@@ -115,13 +137,12 @@ class BeaconDBManager {
                             dict[rFiled] = rValue as String?
                             // result.insert(mod, at: result.count)
                         }
+                        
                         results.insert(dict , at: results.count)
                         
                     }
                     // Store each fetched data row in the results array, but first check if there is actually data.
-                }
-                    
-                else {
+                } else {
                     // This is the case of an executable query (insert, update, ...).
                     // Execute the query.
                     if SQLITE_DONE == sqlite3_step(compiledStatement) {
@@ -129,32 +150,18 @@ class BeaconDBManager {
                         affectedRows = Int(sqlite3_changes(sqlite3Database))
                         // Keep the last inserted row ID.
                         //lastInsertedRowID = Double(sqlite3_last_insert_rowid(sqlite3Database))
-                    }
-                    else {
+                    } else {
                         // If could not execute the query show the error message on the debugger.
-                        #if DEBUG
+#if DEBUG
                         debugPrint("DB Error: \(String(describing: sqlite3_errmsg(sqlite3Database))) \(query)")
-                        #endif
+#endif
                     }
                 }
-                
             }
+            
             sqlite3_finalize(compiledStatement)
         }
         
         sqlite3_close(sqlite3Database)
-    }
-    
-    func loadData(fromDB query: String) -> Array<Dictionary<String,String>> {
-        // Run the query and indicate that is not executable.
-        // The query string is converted to a char* object.
-        runQuery(query, isQueryExecutable: false)
-        // Returned the loaded results.
-        return (results)
-    }
-    
-    func execute(_ query: String) {
-        // Run the query and indicate that is executable.
-        runQuery(query, isQueryExecutable: true)
     }
 }

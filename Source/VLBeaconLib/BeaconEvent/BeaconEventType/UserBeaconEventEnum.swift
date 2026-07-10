@@ -72,6 +72,12 @@ public enum UserBeaconEventEnum : BeaconEventNameProtocol, Equatable{
     case personalizationEditPopup
     case personalizationPopup
     
+    case paymentMethodSelection
+    case multiviewSwitch
+    case multiviewStart
+    case multiviewComplete
+    
+    
     case custom(eventName: String)
     
     public func getBeaconEventNameString() -> String {
@@ -168,6 +174,16 @@ public enum UserBeaconEventEnum : BeaconEventNameProtocol, Equatable{
             return "personalization-edit-pop-up"
         case .personalizationPopup:
             return "personalization-pop-up"
+            
+        case .paymentMethodSelection:
+            return "payment-method-selection"
+        
+        case .multiviewSwitch:
+            return "multiview-switch"
+        case .multiviewStart:
+            return "multiview-start"
+        case .multiviewComplete:
+            return "multiview-complete"
             
         case .custom(let eventName):
             return eventName

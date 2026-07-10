@@ -7,8 +7,7 @@
 
 import Foundation
 
-internal class BeaconQueryManager {
-    
+internal final class BeaconQueryManager {
     static let sharedInstance : BeaconQueryManager = {
         let instance = BeaconQueryManager()
         return instance
@@ -22,25 +21,11 @@ internal class BeaconQueryManager {
     
     private var dbManagerObj: BeaconDBManager
     private var beaconDBConstants: BeaconDBConstants
-    
-    private func createDBForBeaconEvents() {
-        
-        dbManagerObj.intializeData(dbFilename: beaconDBConstants.DBNAME, tableName: beaconDBConstants.USERTABLENAME, tableColumnsQuery: beaconDBConstants.USER_TABLE_COLUMNS_QUERY )
-        
-        dbManagerObj.intializeData(dbFilename: beaconDBConstants.DBNAME, tableName: beaconDBConstants.PLAYERTABLENAME, tableColumnsQuery: beaconDBConstants.PLAYER_TABLE_COLUMNS_QUERY )
-    }
-    
-    private func removeEmptyAndNilValues(from dictionary: inout [String: Any]) {
-        dictionary = dictionary.filter { key, value in
-            if let value = value as? String {
-                return !value.isEmpty
-            }
-            return true
-        }
-    }
-    
+}
+
+// MARK: - Internal methods
+extension BeaconQueryManager {
     func fetchTheUnsyncronisedBeaconEvents(_ beaconType: BeaconType) -> Array<Dictionary<String,Any>>? {
-        
         let queryToLoadAllData: String?
         
         switch beaconType{
@@ -51,13 +36,13 @@ internal class BeaconQueryManager {
             queryToLoadAllData = "select * from \(beaconDBConstants.PLAYERTABLENAME)"
         }
         
-        guard let queryToLoadAllData else{ return nil }
+        guard let queryToLoadAllData else { return nil }
         
         let customBeaconData = dbManagerObj.loadData(fromDB: queryToLoadAllData)
         
         let transformedData = customBeaconData.map { dictionaryData -> [String: Any] in
             var dataMap = dictionaryData as [String: Any]
-
+            
             if let customData = dictionaryData[additionalData]?.data(using: .utf8),
                let decodedDict = try? JSONDecoder().decode(AnyDecodable.self, from: customData).value as? [String: Any] {
                 dataMap[additionalData] = decodedDict
@@ -74,24 +59,20 @@ internal class BeaconQueryManager {
             return dataMap
         }
         
-//        print("in fetchTheUnsyncronisedBeaconEvents: \(transformedData)")
         return transformedData
     }
     
     func addBeaconEventInDB(_ beaconEvent: BeaconEventBodyProtocol) {
-        
         guard let queryToAddBeaconEvent = beaconEvent.addBeaconInDBQuery() else { return }
-//        print("in addBeaconEventInDB: \(queryToAddBeaconEvent)")
         dbManagerObj.execute(queryToAddBeaconEvent)
     }
     
-    //MARK:- Generate Query to remove data from sqlite
     func removeBeaconEventFromTheBeaconDB(_ beaconType: BeaconType) {
-        
         Log.shared.d("DB: Deleting \(beaconType) Table")
+        
         let queryToRemoveBeaconEvent: String?
         
-        switch beaconType{
+        switch beaconType {
         case .user:
             queryToRemoveBeaconEvent = "delete from \(beaconDBConstants.USERTABLENAME)"
         case .player:
@@ -102,5 +83,31 @@ internal class BeaconQueryManager {
         
         dbManagerObj.execute(queryToRemoveBeaconEvent)
     }
+}
 
+// MARK: - Private methods
+private extension BeaconQueryManager {
+    func createDBForBeaconEvents() {
+        dbManagerObj
+            .intializeData(
+                dbFilename: beaconDBConstants.DBNAME,
+                tableName: beaconDBConstants.USERTABLENAME,
+                tableColumnsQuery: beaconDBConstants.USER_TABLE_COLUMNS_QUERY
+            )
+        dbManagerObj
+            .intializeData(
+                dbFilename: beaconDBConstants.DBNAME,
+                tableName: beaconDBConstants.PLAYERTABLENAME,
+                tableColumnsQuery: beaconDBConstants.PLAYER_TABLE_COLUMNS_QUERY
+            )
+    }
+    
+    func removeEmptyAndNilValues(from dictionary: inout [String: Any]) {
+        dictionary = dictionary.filter { key, value in
+            if let value = value as? String {
+                return !value.isEmpty
+            }
+            return true
+        }
+    }
 }
