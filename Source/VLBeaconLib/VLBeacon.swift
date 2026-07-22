@@ -44,9 +44,14 @@ final public class VLBeacon {
             return result
         }
         set {
+            // Synchronous so tokenIdentity is ready before immediate submitUserBeaconEvent calls.
+            // Write _tokenIdentity directly (already on tokenQueue) to avoid nested sync deadlocks.
             tokenQueue.sync {
                 self._authorizationToken = newValue
-                guard let authorizationToken = newValue else { return }
+                guard let authorizationToken = newValue else {
+                    self._tokenIdentity = nil
+                    return
+                }
                 self._tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: authorizationToken)
             }
         }

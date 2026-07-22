@@ -34,11 +34,15 @@ extension VLBeacon {
     submitUserBeaconEvent(
       eventName: eventName,
       source: source,
-      eventData: payload
+      eventData: payload.toDictionary()
     )
   }
 
-  /// Builds and submits a user beacon event inside VLBeaconLib so callers never construct `UserBeaconEventStruct` across module boundaries.
+  /// Builds and submits a user beacon event inside VLBeaconLib.
+  ///
+  /// `eventData` must be a dictionary (call `payload.toDictionary()` in the caller).
+  /// Passing `BeaconEventPayloadProtocol` existentials across a dynamic VLBeaconLib
+  /// boundary causes `EXC_BAD_ACCESS` (null witness / metadata).
   public func submitUserBeaconEvent(
     eventName: UserBeaconEventEnum,
     userId: String? = nil,
@@ -49,7 +53,7 @@ extension VLBeacon {
     environment: String? = nil,
     appversion: String? = nil,
     source: String? = nil,
-    eventData: BeaconEventPayloadProtocol? = nil,
+    eventData: [String: Any]? = nil,
     additionalData: [String: Any]? = nil,
     userMergedForAnonymousId: String? = nil
   ) {

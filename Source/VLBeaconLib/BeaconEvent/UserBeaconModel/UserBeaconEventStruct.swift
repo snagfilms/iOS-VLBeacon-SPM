@@ -35,7 +35,7 @@ public struct UserBeaconEventStruct {
         environment: String? = nil,
         appversion: String? = nil,
         source: String?,
-        eventData: BeaconEventPayloadProtocol? = nil,
+        eventData: [String: Any]? = nil,
         additionalData: [String : Any]? = nil,
         tokenIdentity: TokenIdentity?
     ) {
@@ -77,7 +77,8 @@ public struct UserBeaconEventStruct {
         self.ref = ""
         self.url = ""
         
-        self.eventdata = eventData?.toDictionary()
+        // Dictionary form avoids EXC_BAD_ACCESS when crossing dynamic VLBeaconLib boundary.
+        self.eventdata = eventData
         self.additionaldata = additionalData
     }
 }
