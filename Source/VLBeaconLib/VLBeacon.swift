@@ -3,7 +3,6 @@
 
 import Foundation
 
-
 final public class VLBeacon {
     private static let sharedInstance = VLBeacon()
     
@@ -17,7 +16,11 @@ final public class VLBeacon {
     
     private let bundleIdentifier = "com.viewlift.beacon"
     
-    public var tokenIdentity: TokenIdentity?
+    private var _tokenIdentity: TokenIdentity?
+    public var tokenIdentity: TokenIdentity? {
+        get { tokenQueue.sync { _tokenIdentity } }
+        set { tokenQueue.sync { _tokenIdentity = newValue } }
+    }
     
     internal var userBeaconUrl : String?
     internal var playerBeaconUrl : String?
@@ -29,9 +32,9 @@ final public class VLBeacon {
     private var isOfflineEventsSynced = false
     
     private let tokenQueue = DispatchQueue(label: "com.viewlift.beacon.tokenQueue")
-
+    
     private var _authorizationToken: String?
-
+    
     public var authorizationToken: String? {
         get {
             var result: String?
@@ -41,63 +44,59 @@ final public class VLBeacon {
             return result
         }
         set {
-            tokenQueue.async {
+            tokenQueue.sync {
                 self._authorizationToken = newValue
                 guard let authorizationToken = newValue else { return }
-                self.tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: authorizationToken)
+                self._tokenIdentity = JWTTokenParser().jwtTokenParser(jwtToken: authorizationToken)
             }
         }
     }
-
     
     public var debugLogs: Bool? = false {
-        didSet{
+        didSet {
             guard let debugLogs else { return }
+            
             Log.shared.isLoggingEnabled = debugLogs
-            if debugLogs{
+            
+            if debugLogs {
                 Log.shared.d("VLBeacon debug logs enabled!")
                 Log.shared.d("User Beacon events pointing to \(String(describing: userBeaconUrl))")
                 Log.shared.d("Player Beacon events pointing to \(String(describing: playerBeaconUrl))")
             }
-            
         }
     }
-    
-    
-    public func startSyncBeaconEvents(userBeaconUrl: String?, playerBeaconUrl: String?) {
-        
+}
+
+// MARK: - Public methods
+public extension VLBeacon {
+    func startSyncBeaconEvents(userBeaconUrl: String?, playerBeaconUrl: String?) {
         self.setupConfiguration(userBeaconUrl: userBeaconUrl, playerBeaconUrl: playerBeaconUrl)
         
         let sharedSyncManager = BeaconSyncManager.sharedInstance
         
-        if NetworkStatus.sharedInstance.isNetworkAvailable() {
-            if let authToken = authorizationToken {
-                    sharedSyncManager.startSyncingTheEvents(vlBeacon: self, authenticationToken: authToken, withSuccess: {(_ success: Bool) -> Void in
-                    })
-            }
-            
-            
-        }
-    }
-    
-    public func updatePlayerBeaconEndpoint(_ playerEndpoint: String) {
-        if playerBeaconUrl == nil, (playerBeaconUrl?.isEmpty ?? true),
-           !playerEndpoint.isEmpty {
-            playerBeaconUrl = playerEndpoint
-            environment = getEnvironment()
-        }
-    }
-    
-    public func updateUserBeaconEndpoint(_ userEndpoint: String) {
-        if userBeaconUrl == nil, (userBeaconUrl?.isEmpty ?? true),
-           !userEndpoint.isEmpty {
-            userBeaconUrl = userEndpoint
-            environment = getEnvironment()
-        }
-    }
-    
-    public func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol, userMergedForAnonymousId: String? = nil) {
+        guard NetworkStatus.sharedInstance.isNetworkAvailable() else { return }
+        guard let authToken = authorizationToken else { return }
         
+        sharedSyncManager.startSyncingTheEvents(vlBeacon: self,
+                                                authenticationToken: authToken,
+                                                withSuccess: {(_ success: Bool) -> Void in })
+    }
+    
+    func updatePlayerBeaconEndpoint(_ playerEndpoint: String) {
+        guard playerBeaconUrl == nil, (playerBeaconUrl?.isEmpty ?? true), !playerEndpoint.isEmpty else { return }
+        
+        playerBeaconUrl = playerEndpoint
+        environment = getEnvironment()
+    }
+    
+    func updateUserBeaconEndpoint(_ userEndpoint: String) {
+        guard userBeaconUrl == nil, (userBeaconUrl?.isEmpty ?? true), !userEndpoint.isEmpty else { return }
+        
+        userBeaconUrl = userEndpoint
+        environment = getEnvironment()
+    }
+    
+    func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol, userMergedForAnonymousId: String? = nil) {
         let deviceid = eventStructBody.toDictionary()["deviceid"] as? String
         
         if !isOfflineEventsSynced {
@@ -128,7 +127,7 @@ final public class VLBeacon {
             }
             event.mvpdprovider = mvpdProvider
             event.eventType = "Player Beacon"
-       
+            
             debugPrint("Event Player: ", event.toDictionary())
             
             if !isNetworkAvailable {
@@ -137,6 +136,9 @@ final public class VLBeacon {
             
             if let authToken = self.authorizationToken {
                 event.triggerEvents(authToken: authToken, beaconInstance: self)
+            } else {
+                // Token not ready yet — save locally, will sync when token arrives
+                BeaconOfflineHandle.saveDataToLocal(newDict: event.toDictionary())
             }
             
         } else if var eventUser = eventStructBody as? UserBeaconEventStruct {
@@ -161,29 +163,30 @@ final public class VLBeacon {
             
             if let authToken = self.authorizationToken {
                 eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
+            } else {
+                // Token not ready yet — save locally, will sync when token arrives
+                BeaconOfflineHandle.saveDataToLocal(newDict: eventUser.toDictionary())
             }
         }
     }
-    
 }
-extension VLBeacon{
-    
-    
-    private func getDebugLogger() -> Bool? {
+
+// MARK: - Private methods
+private extension VLBeacon {
+    func getDebugLogger() -> Bool? {
         guard let bundlePath = Bundle.main.path(forResource: "SiteConfig", ofType: "plist"),
               let dict = NSDictionary.init(contentsOfFile: bundlePath),
               let loggerValue = dict["VLBeaconDebugLogger"] as? Bool else {return false}
         return loggerValue
     }
     
-    private func setupConfiguration(userBeaconUrl: String?, playerBeaconUrl: String?) {
+    func setupConfiguration(userBeaconUrl: String?, playerBeaconUrl: String?) {
         self.userBeaconUrl = userBeaconUrl
         self.playerBeaconUrl = playerBeaconUrl
         
         environment = getEnvironment()
         debugLogs = getDebugLogger()
     }
-    
     
     func getEnvironment() -> String {
         guard let bundlePath = Bundle.main.path(forResource: "SiteConfig", ofType: "plist"),
@@ -205,5 +208,4 @@ extension VLBeacon{
             return "production"
         }
     }
-    
 }
