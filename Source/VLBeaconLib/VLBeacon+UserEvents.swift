@@ -10,11 +10,15 @@ extension VLBeacon {
   /// Convenience for authentication beacon events — constructs `AuthenticationPayload`
   /// inside VLBeaconLib so callers never allocate the struct across module boundaries
   /// (avoids `EXC_BAD_ACCESS` when VLBeaconLib is a dynamic framework).
+  ///
+  /// - Important: Pass plain `String`s for `eventName` / `type` / `subType`. Passing
+  ///   `UserBeaconEventEnum` / `AuthType` / `AuthSubType` across a dynamic VLBeaconLib
+  ///   boundary causes `EXC_BAD_ACCESS` (null type metadata) at the call site.
   public func submitAuthenticationBeaconEvent(
-    eventName: UserBeaconEventEnum,
+    eventName: String,
     source: String? = "VLAuthentication",
-    type: AuthType? = nil,
-    subType: AuthSubType? = nil,
+    type: String? = nil,
+    subType: String? = nil,
     email: String? = nil,
     phoneNumber: String? = nil,
     mvpd: String? = nil,
@@ -40,11 +44,12 @@ extension VLBeacon {
 
   /// Builds and submits a user beacon event inside VLBeaconLib.
   ///
-  /// `eventData` must be a dictionary (call `payload.toDictionary()` in the caller).
-  /// Passing `BeaconEventPayloadProtocol` existentials across a dynamic VLBeaconLib
-  /// boundary causes `EXC_BAD_ACCESS` (null witness / metadata).
+  /// - Important: `eventName` must be a `String` (not `UserBeaconEventEnum`) when called
+  ///   from another module. Passing `UserBeaconEventEnum` across a dynamic VLBeaconLib
+  ///   boundary causes `EXC_BAD_ACCESS` (null type metadata) at the call site.
+  /// - `eventData` must be a dictionary (call `payload.toDictionary()` in the caller).
   public func submitUserBeaconEvent(
-    eventName: UserBeaconEventEnum,
+    eventName: String,
     userId: String? = nil,
     profileId: String? = nil,
     siteId: String? = nil,

@@ -101,83 +101,112 @@ public extension VLBeacon {
         environment = getEnvironment()
     }
     
-    func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol, userMergedForAnonymousId: String? = nil) {
-        let deviceid = eventStructBody.toDictionary()["deviceid"] as? String
-        
-        if !isOfflineEventsSynced {
-            isOfflineEventsSynced = true
-            
-            NetworkStatus.sharedInstance.syncOfflineDat()
-        }
-        
+    // Concrete overloads (no `BeaconEventBodyProtocol` existential involved) — calling
+    // `.toDictionary()` / `.triggerEvents(...)` on a value whose static type is known
+    // avoids boxing the (large) struct into a protocol existential. Boxing these structs
+    // — even entirely *within* VLBeaconLib itself, not just across the AppCMS boundary —
+    // has been observed to cause `EXC_BAD_ACCESS` (null witness/metadata) while VLBeaconLib
+    // is linked as a dynamic framework. Prefer these overloads; the protocol-typed
+    // overload below only exists for source compatibility with not-yet-updated callers.
+    func triggerBeaconEvent(_ event: PlayerBeaconEventStruct, userMergedForAnonymousId: String? = nil) {
+        var event = event
+        let deviceid = event.toDictionary()["deviceid"] as? String
+
+        prepareForOfflineSyncIfNeeded()
         let isNetworkAvailable = NetworkStatus.sharedInstance.isNetworkAvailable()
         let uID = tokenIdentity?.userId as? String ?? ""
-        
         let anonymousId = tokenIdentity?.anonymousId as? String ?? ""
-        
-        if var event = eventStructBody as? PlayerBeaconEventStruct {
-            if (anonymousId ?? "").isEmpty == false {
-                event.profid = "guest-user"
-                event.uid = deviceid
-                event.anonymousuid = anonymousId
-            } else {
-                event.profid = uID
-            }
-            if let userMergedForAnonymousId {
-                event.anonymousuid = userMergedForAnonymousId
-            }
-            event.environment = environment
-            if let _ = mvpdProvider {
-                event.tveProvider = tveProvider
-            }
-            event.mvpdprovider = mvpdProvider
-            event.eventType = "Player Beacon"
-            
-            debugPrint("Event Player: ", event.toDictionary())
-            
-            if !isNetworkAvailable {
-                BeaconOfflineHandle.saveDataToLocal(newDict: event.toDictionary())
-            }
-            
-            if let authToken = self.authorizationToken {
-                event.triggerEvents(authToken: authToken, beaconInstance: self)
-            } else {
-                // Token not ready yet — save locally, will sync when token arrives
-                BeaconOfflineHandle.saveDataToLocal(newDict: event.toDictionary())
-            }
-            
-        } else if var eventUser = eventStructBody as? UserBeaconEventStruct {
-            if (anonymousId ?? "").isEmpty == false {
-                eventUser.profid = "guest-user"
-                eventUser.uid = deviceid
-                eventUser.anonymousuid = anonymousId
-            } else {
-                eventUser.profid = uID
-            }
-            if let userMergedForAnonymousId {
-                eventUser.anonymousuid = userMergedForAnonymousId
-            }
-            eventUser.environment = environment
-            eventUser.eventType = "User Beacon"
-            
-            debugPrint("Event User: ", eventUser.toDictionary())
-            
-            if !isNetworkAvailable {
-                BeaconOfflineHandle.saveDataToLocal(newDict: eventUser.toDictionary())
-            }
-            
-            if let authToken = self.authorizationToken {
-                eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
-            } else {
-                // Token not ready yet — save locally, will sync when token arrives
-                BeaconOfflineHandle.saveDataToLocal(newDict: eventUser.toDictionary())
-            }
+
+        if (anonymousId ?? "").isEmpty == false {
+            event.profid = "guest-user"
+            event.uid = deviceid
+            event.anonymousuid = anonymousId
+        } else {
+            event.profid = uID
+        }
+        if let userMergedForAnonymousId {
+            event.anonymousuid = userMergedForAnonymousId
+        }
+        event.environment = environment
+        if let _ = mvpdProvider {
+            event.tveProvider = tveProvider
+        }
+        event.mvpdprovider = mvpdProvider
+        event.eventType = "Player Beacon"
+
+        debugPrint("Event Player: ", event.toDictionary())
+
+        if !isNetworkAvailable {
+            BeaconOfflineHandle.saveDataToLocal(newDict: event.toDictionary())
+        }
+
+        if let authToken = self.authorizationToken {
+            event.triggerEvents(authToken: authToken, beaconInstance: self)
+        } else {
+            // Token not ready yet — save locally, will sync when token arrives
+            BeaconOfflineHandle.saveDataToLocal(newDict: event.toDictionary())
+        }
+    }
+
+    func triggerBeaconEvent(_ event: UserBeaconEventStruct, userMergedForAnonymousId: String? = nil) {
+        var eventUser = event
+        let deviceid = eventUser.toDictionary()["deviceid"] as? String
+
+        prepareForOfflineSyncIfNeeded()
+        let isNetworkAvailable = NetworkStatus.sharedInstance.isNetworkAvailable()
+        let uID = tokenIdentity?.userId as? String ?? ""
+        let anonymousId = tokenIdentity?.anonymousId as? String ?? ""
+
+        if (anonymousId ?? "").isEmpty == false {
+            eventUser.profid = "guest-user"
+            eventUser.uid = deviceid
+            eventUser.anonymousuid = anonymousId
+        } else {
+            eventUser.profid = uID
+        }
+        if let userMergedForAnonymousId {
+            eventUser.anonymousuid = userMergedForAnonymousId
+        }
+        eventUser.environment = environment
+        eventUser.eventType = "User Beacon"
+
+        debugPrint("Event User: ", eventUser.toDictionary())
+
+        if !isNetworkAvailable {
+            BeaconOfflineHandle.saveDataToLocal(newDict: eventUser.toDictionary())
+        }
+
+        if let authToken = self.authorizationToken {
+            eventUser.triggerEvents(authToken: authToken, beaconInstance: self)
+        } else {
+            // Token not ready yet — save locally, will sync when token arrives
+            BeaconOfflineHandle.saveDataToLocal(newDict: eventUser.toDictionary())
+        }
+    }
+
+    // Compatibility shim for external callers (e.g. VLStoreKit) built against an older
+    // VLBeaconLib API. Once such callers are rebuilt against this version, Swift's overload
+    // resolution automatically prefers the concrete overloads above at their call sites
+    // (since they already hold a concretely-typed `PlayerBeaconEventStruct` /
+    // `UserBeaconEventStruct`), so this path should no longer be hit in practice.
+    @available(*, deprecated, message: "Pass a concrete PlayerBeaconEventStruct or UserBeaconEventStruct to avoid boxing it into a BeaconEventBodyProtocol existential.")
+    func triggerBeaconEvent(_ eventStructBody: BeaconEventBodyProtocol, userMergedForAnonymousId: String? = nil) {
+        if let event = eventStructBody as? PlayerBeaconEventStruct {
+            triggerBeaconEvent(event, userMergedForAnonymousId: userMergedForAnonymousId)
+        } else if let eventUser = eventStructBody as? UserBeaconEventStruct {
+            triggerBeaconEvent(eventUser, userMergedForAnonymousId: userMergedForAnonymousId)
         }
     }
 }
 
 // MARK: - Private methods
 private extension VLBeacon {
+    func prepareForOfflineSyncIfNeeded() {
+        guard !isOfflineEventsSynced else { return }
+        isOfflineEventsSynced = true
+        NetworkStatus.sharedInstance.syncOfflineDat()
+    }
+
     func getDebugLogger() -> Bool? {
         guard let bundlePath = Bundle.main.path(forResource: "SiteConfig", ofType: "plist"),
               let dict = NSDictionary.init(contentsOfFile: bundlePath),
