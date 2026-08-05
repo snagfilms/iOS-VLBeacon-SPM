@@ -43,6 +43,8 @@ public struct VLPlayerUserInfoKeys {
     
     // MARK: - Chaptering Click-Stream Keys
     public static let playerControlAction = "playerControlAction"
+    public static let playerAction = "playerAction"
+    public static let carouselSelection = "carouselSelection"
     public static let playerState = "playerState"
     public static let recapTitle = "recapTitle"
     public static let recapNumber = "recapNumber"
