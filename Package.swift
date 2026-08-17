@@ -17,7 +17,8 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "VLBeaconLib"),
+            name: "VLBeaconLib",
+            path: "Source/VLBeaconLib"),
         .testTarget(
             name: "VLBeaconLibTests",
             dependencies: ["VLBeaconLib"]),
