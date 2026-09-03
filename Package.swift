@@ -12,11 +12,13 @@ let package = Package(
     products: [
         .library(
             name: "VLBeaconLib",
+            type: .dynamic,
             targets: ["VLBeaconLib"]),
     ],
     targets: [
         .target(
-            name: "VLBeaconLib"),
+            name: "VLBeaconLib",
+            path: "Source/VLBeaconLib"),
         .testTarget(
             name: "VLBeaconLibTests",
             dependencies: ["VLBeaconLib"]),

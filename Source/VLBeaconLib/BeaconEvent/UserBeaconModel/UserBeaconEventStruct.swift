@@ -35,13 +35,46 @@ public struct UserBeaconEventStruct {
         environment: String? = nil,
         appversion: String? = nil,
         source: String?,
-        eventData: BeaconEventPayloadProtocol? = nil,
+        eventData: [String: Any]? = nil,
+        additionalData: [String : Any]? = nil,
+        tokenIdentity: TokenIdentity?
+    ) {
+        self.init(
+            eventName: eventName.getBeaconEventNameString(),
+            userId: userId,
+            profileId: profileId,
+            siteId: siteId,
+            pfm: pfm,
+            etstamp: etstamp,
+            environment: environment,
+            appversion: appversion,
+            source: source,
+            eventData: eventData,
+            additionalData: additionalData,
+            tokenIdentity: tokenIdentity
+        )
+    }
+
+    /// String-based init for cross-module callers — avoids passing `UserBeaconEventEnum`
+    /// across a dynamic VLBeaconLib boundary (`EXC_BAD_ACCESS` / null type metadata).
+    public init(
+        eventName: String,
+        userId: String? = nil,
+        profileId: String? = nil,
+        siteId: String? = nil,
+        pfm: String? = nil,
+        etstamp: String? = nil,
+        environment: String? = nil,
+        appversion: String? = nil,
+        source: String?,
+        eventData: [String: Any]? = nil,
         additionalData: [String : Any]? = nil,
         tokenIdentity: TokenIdentity?
     ) {
         let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity
+        let beaconInstance = VLBeacon.getInstance()
         
-        self.ename = eventName.getBeaconEventNameString()
+        self.ename = eventName
         self.profid = profileId ?? ""
         
         if let userID = tokenId?.userId {
@@ -68,14 +101,16 @@ public struct UserBeaconEventStruct {
             self.source = "VLBeacon"
         }
         
-        self.pfm = Utility.sharedInstance.getPlatform()
+        // Prefer explicit caller overrides when provided (feature branch API).
+        self.pfm = pfm ?? Utility.sharedInstance.getPlatform()
+        self.appversion = appversion ?? Utility.sharedInstance.getAppVersion()
+        self.etstamp = etstamp ?? Utility.sharedInstance.getCurrentTimestampInGMT()
+        self.environment = environment ?? beaconInstance.environment
+        self.ref = ""
+        self.url = ""
         
-        self.appversion = Utility.sharedInstance.getAppVersion()
-        
-        self.etstamp = Utility.sharedInstance.getCurrentTimestampInGMT()
-        
-        self.eventdata = eventData?.toDictionary()
-        
+        // Dictionary form avoids EXC_BAD_ACCESS when crossing dynamic VLBeaconLib boundary.
+        self.eventdata = eventData
         self.additionaldata = additionalData
     }
 }
