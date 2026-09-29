@@ -6,8 +6,8 @@ import PackageDescription
 let package = Package(
     name: "VLBeaconLib",
     platforms: [
-        .iOS(.v14),
-        .tvOS(.v13)
+        .iOS(.v15),
+        .tvOS(.v15)
     ],
     products: [
         .library(
