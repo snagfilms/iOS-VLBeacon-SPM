@@ -296,7 +296,7 @@ public final class VLEventDataValidator: EventDataValidator {
             return array.reduce(0) { $0 + estimatedValueSize($1) }
         case is Int, is Double, is Float, is Bool:
             return 8  // Approximate size for numeric types
-        case let date as Date:
+        case _ as Date:
             return 8  // Timestamp
         case let url as URL:
             return url.absoluteString.utf8.count

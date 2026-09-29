@@ -111,7 +111,7 @@ public extension VLBeacon {
         let anonymousId = tokenIdentity?.anonymousId as? String ?? ""
         
         if var event = eventStructBody as? PlayerBeaconEventStruct {
-            if (anonymousId ?? "").isEmpty == false {
+            if anonymousId.isEmpty == false {
                 event.profid = "guest-user"
                 event.uid = deviceid
                 event.anonymousuid = anonymousId
@@ -142,7 +142,7 @@ public extension VLBeacon {
             }
             
         } else if var eventUser = eventStructBody as? UserBeaconEventStruct {
-            if (anonymousId ?? "").isEmpty == false {
+            if anonymousId.isEmpty == false {
                 eventUser.profid = "guest-user"
                 eventUser.uid = deviceid
                 eventUser.anonymousuid = anonymousId
