@@ -56,16 +56,11 @@ internal class Utility {
     }
     ///- Returns: current time stamp in string format in the (GMT)
     func getCurrentTimestampInGMT() -> String {
-        let estTimeZone = TimeZone(abbreviation: "GMT")!
-        
-        let currentDate = Date()
-        
+        let gmtTimeZone = TimeZone(secondsFromGMT: 0) ?? TimeZone(identifier: "UTC") ?? .current
         let dateFormatter = DateFormatter()
-        dateFormatter.timeZone = estTimeZone
+        dateFormatter.timeZone = gmtTimeZone
         dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        
-        let estTimestamp = dateFormatter.string(from: currentDate)
-        return estTimestamp
+        return dateFormatter.string(from: Date())
     }
     
     func getPlatform() -> String{
@@ -81,8 +76,10 @@ internal class Utility {
     
     func getAppVersion() -> String {
         guard let dict = Bundle.main.infoDictionary,
-              let versionString = dict["CFBundleShortVersionString"] as? String, let appBuild =  Bundle.main.infoDictionary!["CFBundleVersion"] else { return "1.0.0" }
-
+              let versionString = dict["CFBundleShortVersionString"] as? String else {
+            return "1.0.0"
+        }
+        let appBuild = dict["CFBundleVersion"].map { String(describing: $0) } ?? "0"
         return "\(versionString).\(appBuild)"
     }
     

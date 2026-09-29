@@ -62,7 +62,9 @@ extension BeaconQueryManager {
         return transformedData
     }
     
-    func addBeaconEventInDB(_ beaconEvent: BeaconEventBodyProtocol) {
+    // Generic (not `BeaconEventBodyProtocol` existential) — see `postBeaconEvents` in
+    // DataManager.swift for why boxing these structs is avoided.
+    func addBeaconEventInDB<T: BeaconEventBodyProtocol>(_ beaconEvent: T) {
         guard let queryToAddBeaconEvent = beaconEvent.addBeaconInDBQuery() else { return }
         dbManagerObj.execute(queryToAddBeaconEvent)
     }

@@ -10,7 +10,11 @@ import Foundation
 class DataManger: NSObject {
         
     //MARK: Api to post beacon data
-    func postBeaconEvents(beaconStructBody: BeaconEventBodyProtocol, authenticationToken: String, baseUrl: String) {
+    // Generic (not `BeaconEventBodyProtocol` existential) so the caller's concrete struct
+    // type is preserved — avoids boxing large beacon structs into a protocol existential,
+    // which can cause `EXC_BAD_ACCESS` (null witness/metadata) while VLBeaconLib is linked
+    // as a dynamic framework.
+    func postBeaconEvents<T: BeaconEventBodyProtocol>(beaconStructBody: T, authenticationToken: String, baseUrl: String) {
 
         if NetworkStatus.sharedInstance.isNetworkAvailable() {
             Log.shared.i("Internet Detected. Posting the event.")
