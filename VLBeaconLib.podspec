@@ -11,8 +11,8 @@ Pod::Spec.new do |s|
     :branch => 'Develop_Pod'
   }
   
-  s.ios.deployment_target = '14.0'
-  s.tvos.deployment_target = '13.0'
+  s.ios.deployment_target = '15.0'
+  s.tvos.deployment_target = '15.0'
   s.swift_versions = ['5.8', '5.9']  # Don't use 6.0
   
   s.source_files = 'Source/VLBeaconLib/**/*.{swift,h,m}'
