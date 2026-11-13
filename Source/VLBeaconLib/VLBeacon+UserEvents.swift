@@ -21,19 +21,25 @@ extension VLBeacon {
     subType: String? = nil,
     email: String? = nil,
     phoneNumber: String? = nil,
+    otp: String? = nil,
     mvpd: String? = nil,
     existingUser: Bool? = nil,
-    additionalData: [String: String]? = nil
+    additionalData: [String: String]? = nil,
+    errorCode: String? = nil,
+    errorMessage: String? = nil
   ) {
     let payload = AuthenticationPayload(
       type: type,
       subType: subType,
       email: email,
       phoneNumber: phoneNumber,
+      otp: otp,
       mvpd: mvpd,
       existingUser: existingUser,
       additionalData: additionalData,
-      tokenIdentity: tokenIdentity
+      tokenIdentity: tokenIdentity,
+      errorCode: errorCode,
+      errorMessage: errorMessage
     )
     submitUserBeaconEvent(
       eventName: eventName,

@@ -13,13 +13,15 @@ public struct PageViewPayload: BeaconEventPayloadProtocol{
     var pgName: String?
     var pgUrl: String?
     var sourceUrl: String?
+    var source: String?
     var additionalData: [String: Any]?
     
-    public init(pgId: String? = nil, pgName: String? = nil, pgUrl: String? = nil, sourceUrl: String? = nil, additionalData: [String : String]? = nil) {
+    public init(pgId: String? = nil, pgName: String? = nil, pgUrl: String? = nil, sourceUrl: String? = nil, source: String? = nil, additionalData: [String : String]? = nil) {
         self.pgId = pgId
         self.pgName = pgName
         self.pgUrl = pgUrl
         self.sourceUrl = sourceUrl
+        self.source = source
         self.additionalData = additionalData
     }
 }
