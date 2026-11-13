@@ -129,6 +129,18 @@ public struct VLPlayerNotifications {
     public static var chapterComplete: Notification.Name {
         notificationName("vlplayer.chapter.complete")
     }
+
+    public static var playerControlAction: Notification.Name {
+        notificationName("vlplayer.analytics.player.control")
+    }
+
+    public static var liveRecapSelection: Notification.Name {
+        notificationName("vlplayer.analytics.live.recap.select")
+    }
+
+    public static var carouselNavigation: Notification.Name {
+        notificationName("vlplayer.analytics.carousel.navigation")
+    }
     
     // MARK: - Playhead Events
     
@@ -181,4 +193,3 @@ public extension VLPlayerNotifications {
     }
 }
 #endif
-

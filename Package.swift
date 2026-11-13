@@ -6,17 +6,19 @@ import PackageDescription
 let package = Package(
     name: "VLBeaconLib",
     platforms: [
-        .iOS(.v14),
-        .tvOS(.v13)
+        .iOS(.v15),
+        .tvOS(.v15)
     ],
     products: [
         .library(
             name: "VLBeaconLib",
+            type: .dynamic,
             targets: ["VLBeaconLib"]),
     ],
     targets: [
         .target(
-            name: "VLBeaconLib"),
+            name: "VLBeaconLib",
+            path: "Source/VLBeaconLib"),
         .testTarget(
             name: "VLBeaconLibTests",
             dependencies: ["VLBeaconLib"]),
