@@ -20,7 +20,7 @@ public struct AuthenticationPayload: BeaconEventPayloadProtocol {
     var errorCode: String?
     var errorMessage: String?
     
-    public init(type: AuthType? = nil, subType: AuthSubType? = nil, email: String? = nil, phoneNumber: String? = nil, otp: String?, mvpd: String? = nil, existingUser: Bool? = nil, additionalData: [String : String]? = nil, tokenIdentity: TokenIdentity?, errorCode: String? = nil, errorMessage: String? = nil) {
+    public init(type: AuthType? = nil, subType: AuthSubType? = nil, email: String? = nil, phoneNumber: String? = nil, otp: String? = nil, mvpd: String? = nil, existingUser: Bool? = nil, additionalData: [String : String]? = nil, tokenIdentity: TokenIdentity?, errorCode: String? = nil, errorMessage: String? = nil) {
         self.init(
             type: type?.typeName,
             subType: subType?.subTypeName,
@@ -36,7 +36,7 @@ public struct AuthenticationPayload: BeaconEventPayloadProtocol {
 
     /// String-based init for cross-module callers — avoids passing AuthType/AuthSubType
     /// across a dynamic VLBeaconLib boundary.
-    public init(type: String? = nil, subType: String? = nil, email: String? = nil, phoneNumber: String? = nil, otp: String?, mvpd: String? = nil, existingUser: Bool? = nil, additionalData: [String : String]? = nil, tokenIdentity: TokenIdentity?, errorCode: String? = nil, errorMessage: String? = nil) {
+    public init(type: String? = nil, subType: String? = nil, email: String? = nil, phoneNumber: String? = nil, otp: String? = nil, mvpd: String? = nil, existingUser: Bool? = nil, additionalData: [String : String]? = nil, tokenIdentity: TokenIdentity?, errorCode: String? = nil, errorMessage: String? = nil) {
         
         let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity
         

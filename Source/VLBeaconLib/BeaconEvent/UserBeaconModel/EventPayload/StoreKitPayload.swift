@@ -22,12 +22,12 @@ public struct StoreKitPayload: BeaconEventPayloadProtocol {
     var orderTotalAmount: String?
     var currencyCode: String?
     var transactionId: String?
-    var subscriptionStaus: String?
+    var subscriptionStatus: String?
     var errorMessage: String?
     var errorCode: String?
     var additionalData: [String: Any]?
     
-    public init(planId: String? = nil, planName: String? = nil, planDesc: String? = nil, planType: String? = nil, paymentMethod: String? = nil, promotionCode: String? = nil, discountAmount: Int? = nil, purchaseType: String? = nil, orderSubTotalAmount: Int? = nil, orderTaxAmount: Int? = nil, orderTotalAmount: Int? = nil, currencyCode: String? = nil, transactionId: String? = nil, subscriptionStaus: String? = nil, errorMessage: String? = nil, errorCode: String? = nil, additionalData: [String : String]? = nil) {
+    public init(planId: String? = nil, planName: String? = nil, planDesc: String? = nil, planType: String? = nil, paymentMethod: String? = nil, promotionCode: String? = nil, discountAmount: Int? = nil, purchaseType: String? = nil, orderSubTotalAmount: Int? = nil, orderTaxAmount: Int? = nil, orderTotalAmount: Int? = nil, currencyCode: String? = nil, transactionId: String? = nil, subscriptionStatus: String? = nil, errorMessage: String? = nil, errorCode: String? = nil, additionalData: [String : String]? = nil) {
         self.planId = planId
         self.planName = planName
         self.planDesc = planDesc
@@ -41,7 +41,7 @@ public struct StoreKitPayload: BeaconEventPayloadProtocol {
         self.orderTotalAmount = String(orderTotalAmount ?? 0)
         self.currencyCode = currencyCode
         self.transactionId = transactionId
-        self.subscriptionStaus = subscriptionStaus
+        self.subscriptionStatus = subscriptionStatus
         self.errorMessage = errorMessage
         self.errorCode = errorCode
         self.additionalData = additionalData
