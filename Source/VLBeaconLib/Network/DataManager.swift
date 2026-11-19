@@ -40,7 +40,7 @@ class DataManger: NSObject {
 
         NetworkHandler.sharedInstance.callNetworkToPostBeaconData(apiURL: baseUrl, requestType: .post, authenticationToken: authenticationToken, requestHeaders:nil , parameters: beaconEventArray ) { (_ responseConfigData: Bool?) in
             Log.shared.i("Offline Beacon events posted: \(String(describing: responseConfigData))")
-            completionHandler(responseConfigData!)
+            completionHandler(responseConfigData ?? false)
         }
     }
 }
