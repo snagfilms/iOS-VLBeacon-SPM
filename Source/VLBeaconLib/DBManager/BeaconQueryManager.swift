@@ -100,6 +100,10 @@ private extension BeaconQueryManager {
                 tableName: beaconDBConstants.PLAYERTABLENAME,
                 tableColumnsQuery: beaconDBConstants.PLAYER_TABLE_COLUMNS_QUERY
             )
+        dbManagerObj.ensureTextColumns(
+            tableName: beaconDBConstants.PLAYERTABLENAME,
+            columns: beaconDBConstants.PLAYER_TABLE_MIGRATION_COLUMNS
+        )
     }
     
     func removeEmptyAndNilValues(from dictionary: inout [String: Any]) {

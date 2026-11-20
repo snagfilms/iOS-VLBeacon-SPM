@@ -22,39 +22,35 @@ extension StructToDictionaryProtocol {
         let mirror = Mirror(reflecting: self)
         var dict = [String: Any]()
         for case let (label?, value) in mirror.children {
-            if let value = value as? String{//}, !value.isEmpty {
-                if value != "nil" {
-//                    dict[label.lowercased()] = value
-                    dict[label] = value
+            guard let unwrapped = unwrapMirrorValue(value) else { continue }
+
+            if let stringValue = unwrapped as? String {
+                if stringValue != "nil" {
+                    dict[label] = stringValue
                 }
-            }
-            if let value = value as? Bool {
-                dict[label] = value
-            }
-            if let value = value as? Int {
-                dict[label] = value
-            }
-//            if label == additionalData, let value = value as? [String: Any] {
-//                dict.merge(value) { (current, _) in current }
-//            }
-//			if let value = value as? [String: String] {
-//				dict[label] = value
-//			}
-//            else
-			if let value = value as? [String: Any] {
-                dict[label] = value
-            }
-            else if let value = value as? [[String: String]] {
-                dict[label] = value
-            }
-            else if let value = value as? [String] {
-                dict[label] = value
-            }
-            else if let value = value as? [StructToDictionaryProtocol] {
-                dict[label] = value.map { $0.toDictionary() }
+            } else if let boolValue = unwrapped as? Bool {
+                dict[label] = boolValue
+            } else if let intValue = unwrapped as? Int {
+                dict[label] = intValue
+            } else if let dictValue = unwrapped as? [String: Any] {
+                dict[label] = dictValue
+            } else if let arrayDict = unwrapped as? [[String: String]] {
+                dict[label] = arrayDict
+            } else if let arrayString = unwrapped as? [String] {
+                dict[label] = arrayString
+            } else if let arrayStruct = unwrapped as? [StructToDictionaryProtocol] {
+                dict[label] = arrayStruct.map { $0.toDictionary() }
             }
         }
         return dict
+    }
+
+    /// Unwraps Optional values so fields like `error_message` / `error_code` serialize reliably.
+    private func unwrapMirrorValue(_ value: Any) -> Any? {
+        let mirror = Mirror(reflecting: value)
+        guard mirror.displayStyle == .optional else { return value }
+        guard let child = mirror.children.first else { return nil }
+        return unwrapMirrorValue(child.value)
     }
 }
 
