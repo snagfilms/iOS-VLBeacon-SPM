@@ -24,6 +24,7 @@ public struct UserBeaconEventStruct {
     var additionaldata: [String: Any]?
     var anonymousuid: String?
     var eventType: String?
+    var pageid: String?
     
     public init(
         eventName: UserBeaconEventEnum,
@@ -35,6 +36,7 @@ public struct UserBeaconEventStruct {
         environment: String? = nil,
         appversion: String? = nil,
         source: String?,
+        pageid: String? = nil,
         eventData: [String: Any]? = nil,
         additionalData: [String : Any]? = nil,
         tokenIdentity: TokenIdentity?
@@ -49,6 +51,7 @@ public struct UserBeaconEventStruct {
             environment: environment,
             appversion: appversion,
             source: source,
+            pageid: pageid,
             eventData: eventData,
             additionalData: additionalData,
             tokenIdentity: tokenIdentity
@@ -67,6 +70,7 @@ public struct UserBeaconEventStruct {
         environment: String? = nil,
         appversion: String? = nil,
         source: String?,
+        pageid: String? = nil,
         eventData: [String: Any]? = nil,
         additionalData: [String : Any]? = nil,
         tokenIdentity: TokenIdentity?
@@ -101,6 +105,7 @@ public struct UserBeaconEventStruct {
             self.source = "VLBeacon"
         }
         
+        self.pageid = pageid
         // Prefer explicit caller overrides when provided (feature branch API).
         self.pfm = pfm ?? Utility.sharedInstance.getPlatform()
         self.appversion = appversion ?? Utility.sharedInstance.getAppVersion()
@@ -124,7 +129,7 @@ public extension UserBeaconEventStruct {
         
         let eventDataString: String? = eventdata?.jsonString()
         
-        queryToAddBeaconEvent = "insert into \(BeaconDBConstants().USERTABLENAME) (ename, uid, profid, siteid, pfm, etstamp, environment, deviceid, ref, url, appversion, source, eventData, additionalData) values('\(self.ename )','\(self.uid ?? "")','\(profid ?? "")','\(self.siteid ?? "")','\(self.pfm ?? "")','\(self.etstamp ?? "")','\(self.environment ?? "")','\(self.deviceid ?? "")','\(self.ref ?? "")','\(self.url ?? "")','\(self.appversion ?? "")','\(self.source ?? "")','\(eventDataString ?? "")','\(additionalDataString ?? "")')"
+        queryToAddBeaconEvent = "insert into \(BeaconDBConstants().USERTABLENAME) (ename, uid, profid, siteid, pfm, etstamp, environment, deviceid, ref, url, appversion, source, eventData, additionalData, pageid) values('\(self.ename )','\(self.uid ?? "")','\(profid ?? "")','\(self.siteid ?? "")','\(self.pfm ?? "")','\(self.etstamp ?? "")','\(self.environment ?? "")','\(self.deviceid ?? "")','\(self.ref ?? "")','\(self.url ?? "")','\(self.appversion ?? "")','\(self.source ?? "")','\(eventDataString ?? "")','\(additionalDataString ?? "")','\(self.pageid ?? "")')"
         
         return queryToAddBeaconEvent
     }

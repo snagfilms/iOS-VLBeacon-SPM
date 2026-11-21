@@ -64,6 +64,7 @@ extension VLBeacon {
     environment: String? = nil,
     appversion: String? = nil,
     source: String? = nil,
+    pageid: String? = nil,
     eventData: [String: Any]? = nil,
     additionalData: [String: Any]? = nil,
     userMergedForAnonymousId: String? = nil
@@ -80,6 +81,7 @@ extension VLBeacon {
       environment: environment,
       appversion: appversion,
       source: source,
+      pageid: pageid,
       eventData: eventData,
       additionalData: additionalData,
       tokenIdentity: tokenIdentity
