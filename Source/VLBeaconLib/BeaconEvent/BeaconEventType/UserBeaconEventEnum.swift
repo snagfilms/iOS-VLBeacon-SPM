@@ -33,6 +33,7 @@ public enum UserBeaconEventEnum : BeaconEventNameProtocol, Equatable{
     case pageView
     case like
     case dislike
+    case unlike
     case clickOnItem
     case share
     case languageSelection
@@ -45,7 +46,9 @@ public enum UserBeaconEventEnum : BeaconEventNameProtocol, Equatable{
     case paymentPending
     case paymentSuccess
     case paymentFailed
-
+    case paymentSyncSuccess
+    case paymentSyncFailure
+    
     case cancelSubscription
     case updateSubscription
     
@@ -118,6 +121,8 @@ public enum UserBeaconEventEnum : BeaconEventNameProtocol, Equatable{
             return "like"
         case .dislike:
             return "dislike"
+        case .unlike:
+            return "unlike"
         case .clickOnItem:
             return "click-on-item"
         case .share:
@@ -140,6 +145,10 @@ public enum UserBeaconEventEnum : BeaconEventNameProtocol, Equatable{
             return "payment-success"
         case .paymentFailed:
             return "payment-failed"
+        case .paymentSyncSuccess:
+            return "payment-sync-success"
+        case .paymentSyncFailure:
+            return "payment-sync-failure"
         case .cancelSubscription:
             return "cancel-subscription"
         case .updateSubscription:

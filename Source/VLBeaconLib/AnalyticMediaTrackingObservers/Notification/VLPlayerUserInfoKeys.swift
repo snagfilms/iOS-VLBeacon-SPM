@@ -41,6 +41,18 @@ public struct VLPlayerUserInfoKeys {
     public static let trackOptions = "trackOptions"
     public static let chapterTimeline = "chapterTimeline"
     
+    // MARK: - Chaptering Click-Stream Keys
+    public static let playerControlAction = "playerControlAction"
+    public static let playerAction = "playeraction"
+    public static let playerState = "playerstate"
+    public static let recapTitle = "recaptitle"
+    public static let recapNumber = "recapnumber"
+    public static let recapLocation = "location"
+    public static let recapTags = "tags"
+    public static let carouselName = "carouselname"
+    public static let carouselAction = "carouselaction"
+    public static let isChapteringCuePointEnable = "isChapteringCuePointEnable"
+    
     // MARK: - Analytics Keys
     public static let analyticsContentInfo = "analyticsContentInfo"
     public static let analyticsPlayerInfo = "analyticsPlayerInfo"

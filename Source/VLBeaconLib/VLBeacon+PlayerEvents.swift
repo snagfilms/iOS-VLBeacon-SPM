@@ -1,0 +1,126 @@
+import Foundation
+import UIKit
+
+extension VLBeacon {
+
+  public var isPlayerBeaconConfigured: Bool {
+    guard let playerBeaconUrl, !playerBeaconUrl.isEmpty else { return false }
+    return true
+  }
+
+  /// Builds and submits a player beacon event inside VLBeaconLib so callers never
+  /// construct `PlayerBeaconEventStruct` (or pass it as a `BeaconEventBodyProtocol`
+  /// existential) across a dynamic VLBeaconLib module boundary. Doing so causes
+  /// `EXC_BAD_ACCESS` (null witness/metadata) — the same crash class already fixed
+  /// for user beacon events in `VLBeacon+UserEvents.swift`.
+  public func submitPlayerBeaconEvent(
+    eventName: PlayerBeaconEventEnum,
+    vid: String? = nil,
+    profid: String? = nil,
+    userId: String? = nil,
+    player: String? = nil,
+    media_type: String? = nil,
+    tstampoverride: String? = nil,
+    stream_id: String? = nil,
+    dp1: String? = nil,
+    dp2: String? = nil,
+    dp3: String? = nil,
+    dp4: String? = nil,
+    dp5: String? = nil,
+    ref: String? = nil,
+    apos: Int? = nil,
+    apod: Int? = nil,
+    vpos: Int? = nil,
+    url: String? = nil,
+    embedUrl: String? = nil,
+    ttFirstFrame: Int? = nil,
+    bitrate: Int? = nil,
+    connectionSpeed: Int? = nil,
+    resolution: CGRect? = nil,
+    bufferHealth: Int? = nil,
+    plid: String? = nil,
+    fcid: String? = nil,
+    seriesid: String? = nil,
+    seasonid: String? = nil,
+    seasonnumber: String? = nil,
+    subscription_type: String? = nil,
+    mvpdprovider: String? = nil,
+    guid: String? = nil,
+    appversion: String? = nil,
+    duration: String? = nil,
+    siteId: String? = nil,
+    environment: String? = nil,
+    source: String? = nil,
+    tveProvider: String? = nil,
+    additionalData: [String: Any]? = nil,
+    programId: String? = nil,
+    title: String? = nil,
+    programStartTime: String? = nil,
+    programEndTime: String? = nil,
+    islivestream: Bool? = nil,
+    userConsent: Bool? = nil,
+    brandname: String? = nil,
+    networkname: String? = nil,
+    mvc_id: String? = nil,
+    mv_selected: String? = nil,
+    mv_position: Int? = nil,
+    mv_windows: Int? = nil,
+    userMergedForAnonymousId: String? = nil
+  ) {
+    let event = PlayerBeaconEventStruct(
+      eventName: eventName,
+      vid: vid,
+      profid: profid,
+      userId: userId,
+      player: player,
+      media_type: media_type,
+      tstampoverride: tstampoverride,
+      stream_id: stream_id,
+      dp1: dp1,
+      dp2: dp2,
+      dp3: dp3,
+      dp4: dp4,
+      dp5: dp5,
+      ref: ref,
+      apos: apos,
+      apod: apod,
+      vpos: vpos,
+      url: url,
+      embedUrl: embedUrl,
+      ttFirstFrame: ttFirstFrame,
+      bitrate: bitrate,
+      connectionSpeed: connectionSpeed,
+      resolution: resolution,
+      bufferHealth: bufferHealth,
+      plid: plid,
+      fcid: fcid,
+      seriesid: seriesid,
+      seasonid: seasonid,
+      seasonnumber: seasonnumber,
+      subscription_type: subscription_type,
+      mvpdprovider: mvpdprovider,
+      guid: guid,
+      appversion: appversion,
+      duration: duration,
+      siteId: siteId,
+      environment: environment,
+      source: source,
+      tveProvider: tveProvider,
+      additionalData: additionalData,
+      tokenIdentity: tokenIdentity,
+      programId: programId,
+      title: title,
+      programStartTime: programStartTime,
+      programEndTime: programEndTime,
+      islivestream: islivestream,
+      userConsent: userConsent,
+      brandname: brandname,
+      networkname: networkname,
+      mvc_id: mvc_id,
+      mv_selected: mv_selected,
+      mv_position: mv_position,
+      mv_windows: mv_windows
+    )
+    triggerBeaconEvent(event, userMergedForAnonymousId: userMergedForAnonymousId)
+  }
+}

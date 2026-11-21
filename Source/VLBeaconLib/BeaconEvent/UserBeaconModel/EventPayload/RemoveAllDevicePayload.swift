@@ -9,11 +9,11 @@ import Foundation
 
 public struct RemoveAllDevicePayload: BeaconEventPayloadProtocol{
     
-    var deviceList: [RemoveDevicePayload]?
+    var devices: [RemoveDevicePayload]?
     var additionalData: [String: Any]?
     
     public init(deviceList: [RemoveDevicePayload]? = nil , additionalData: [String : String]? = nil) {
-        self.deviceList = deviceList
+        self.devices = deviceList
         self.additionalData = additionalData
     }
 }
