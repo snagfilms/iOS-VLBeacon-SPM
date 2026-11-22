@@ -177,11 +177,10 @@ private extension BeaconDBManager {
                             let strF=sqlite3_column_name(compiledStatement, Int32(i))
                             let strV = sqlite3_column_text(compiledStatement, Int32(i))
                             
-                            let rFiled:String=String(cString: strF!)
-                            let rValue:String=String(cString: strV!)
-                            //let rValue=String(cString: UnsafePointer<Int8>(strV!))
-                            dict[rFiled] = rValue as String?
-                            // result.insert(mod, at: result.count)
+                            guard let strF else { continue }
+                            let rFiled = String(cString: strF)
+                            let rValue = strV.map { String(cString: $0) } ?? ""
+                            dict[rFiled] = rValue
                         }
                         
                         results.insert(dict , at: results.count)
