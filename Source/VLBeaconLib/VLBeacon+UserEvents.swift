@@ -26,7 +26,8 @@ extension VLBeacon {
     existingUser: Bool? = nil,
     additionalData: [String: String]? = nil,
     errorCode: String? = nil,
-    errorMessage: String? = nil
+    errorMessage: String? = nil,
+    pageId: String? = nil
   ) {
     let payload = AuthenticationPayload(
       type: type,
@@ -44,6 +45,7 @@ extension VLBeacon {
     submitUserBeaconEvent(
       eventName: eventName,
       source: source,
+      pageid: pageId,
       eventData: payload.toDictionary()
     )
   }
