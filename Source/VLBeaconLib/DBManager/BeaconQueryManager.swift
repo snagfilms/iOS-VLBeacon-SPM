@@ -102,6 +102,13 @@ private extension BeaconQueryManager {
                 tableName: beaconDBConstants.PLAYERTABLENAME,
                 tableColumnsQuery: beaconDBConstants.PLAYER_TABLE_COLUMNS_QUERY
             )
+        // Existing installs created the DB before `pageid` existed; CREATE TABLE is skipped
+        // when the file already exists, so migrate the user table explicitly.
+        dbManagerObj.addColumnIfNeeded(
+            tableName: beaconDBConstants.USERTABLENAME,
+            columnName: "pageid",
+            columnType: "TEXT"
+        )
     }
     
     func removeEmptyAndNilValues(from dictionary: inout [String: Any]) {

@@ -26,7 +26,8 @@ extension VLBeacon {
     existingUser: Bool? = nil,
     additionalData: [String: String]? = nil,
     errorCode: String? = nil,
-    errorMessage: String? = nil
+    errorMessage: String? = nil,
+    pageId: String? = nil
   ) {
     let payload = AuthenticationPayload(
       type: type,
@@ -44,6 +45,7 @@ extension VLBeacon {
     submitUserBeaconEvent(
       eventName: eventName,
       source: source,
+      pageid: pageId,
       eventData: payload.toDictionary()
     )
   }
@@ -64,6 +66,7 @@ extension VLBeacon {
     environment: String? = nil,
     appversion: String? = nil,
     source: String? = nil,
+    pageid: String? = nil,
     eventData: [String: Any]? = nil,
     additionalData: [String: Any]? = nil,
     userMergedForAnonymousId: String? = nil
@@ -80,6 +83,7 @@ extension VLBeacon {
       environment: environment,
       appversion: appversion,
       source: source,
+      pageid: pageid,
       eventData: eventData,
       additionalData: additionalData,
       tokenIdentity: tokenIdentity

@@ -82,10 +82,56 @@ extension BeaconDBManager {
         // Run the query and indicate that is executable.
         runQuery(query, isQueryExecutable: true)
     }
+    
+    /// Adds a column to an existing table when missing (safe for already-migrated DBs).
+    func addColumnIfNeeded(tableName: String, columnName: String, columnType: String) {
+        guard !documentsDirectory.isEmpty, !databaseFilename.isEmpty else { return }
+        
+        // Match path style used by `runQuery` / `createDB` so we migrate the same DB file.
+        let databasePath = URL(fileURLWithPath: documentsDirectory)
+            .appendingPathComponent(databaseFilename)
+            .absoluteString
+        
+        var sqlite3Database: OpaquePointer?
+        guard sqlite3_open(databasePath, &sqlite3Database) == SQLITE_OK else { return }
+        defer { sqlite3_close(sqlite3Database) }
+        
+        guard tableHasColumn(db: sqlite3Database, tableName: tableName, columnName: columnName) == false else {
+            return
+        }
+        
+        let alterSQL = "ALTER TABLE \(tableName) ADD COLUMN \(columnName) \(columnType)"
+        if sqlite3_exec(sqlite3Database, alterSQL, nil, nil, nil) != SQLITE_OK {
+#if DEBUG
+            let message = sqlite3_errmsg(sqlite3Database).map { String(cString: $0) } ?? "unknown"
+            debugPrint("DB Error adding column \(columnName): \(message)")
+#endif
+        }
+    }
 }
 
 // MARK: - Private methods
 private extension BeaconDBManager {
+    func tableHasColumn(db: OpaquePointer?, tableName: String, columnName: String) -> Bool {
+        let pragmaSQL = "PRAGMA table_info(\(tableName))"
+        var statement: OpaquePointer?
+        guard sqlite3_prepare_v2(db, pragmaSQL, -1, &statement, nil) == SQLITE_OK else {
+            return false
+        }
+        defer { sqlite3_finalize(statement) }
+        
+        while sqlite3_step(statement) == SQLITE_ROW {
+            // PRAGMA table_info columns: cid, name, type, notnull, dflt_value, pk
+            if let nameCString = sqlite3_column_text(statement, 1) {
+                let existingName = String(cString: nameCString)
+                if existingName == columnName {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+    
     func runQuery(_ query: String, isQueryExecutable queryExecutable: Bool) {
         // Create a sqlite object.
         var sqlite3Database: OpaquePointer?
@@ -131,11 +177,10 @@ private extension BeaconDBManager {
                             let strF=sqlite3_column_name(compiledStatement, Int32(i))
                             let strV = sqlite3_column_text(compiledStatement, Int32(i))
                             
-                            let rFiled:String=String(cString: strF!)
-                            let rValue:String=String(cString: strV!)
-                            //let rValue=String(cString: UnsafePointer<Int8>(strV!))
-                            dict[rFiled] = rValue as String?
-                            // result.insert(mod, at: result.count)
+                            guard let strF else { continue }
+                            let rFiled = String(cString: strF)
+                            let rValue = strV.map { String(cString: $0) } ?? ""
+                            dict[rFiled] = rValue
                         }
                         
                         results.insert(dict , at: results.count)
