@@ -1,0 +1,15 @@
+{
+  "profile": "swiftpm",
+  "mode": "auto",
+  "confidence_threshold": 0.8,
+  "merge_branch": "direct",
+  "record_as_merge": true,
+  "protect": [],
+  "post_merge": [],
+  "build": [
+    "swift build"
+  ],
+  "discover": [],
+  "regenerate": [],
+  "notes": []
+}
