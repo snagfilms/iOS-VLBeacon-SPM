@@ -102,6 +102,10 @@ private extension BeaconQueryManager {
                 tableName: beaconDBConstants.PLAYERTABLENAME,
                 tableColumnsQuery: beaconDBConstants.PLAYER_TABLE_COLUMNS_QUERY
             )
+        dbManagerObj.ensureTextColumns(
+            tableName: beaconDBConstants.PLAYERTABLENAME,
+            columns: beaconDBConstants.PLAYER_TABLE_MIGRATION_COLUMNS
+        )
         // Existing installs created the DB before `pageid` existed; CREATE TABLE is skipped
         // when the file already exists, so migrate the user table explicitly.
         dbManagerObj.addColumnIfNeeded(

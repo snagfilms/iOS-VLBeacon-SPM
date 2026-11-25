@@ -25,21 +25,29 @@ final class BeaconDBManager {
     var arrColumnNames = [Any]()
     var affectedRows : Int = 01
     var lastInsertedRowID : Double  = 01
+    
+    /// Serializes every database operation. This class keeps shared mutable state
+    /// (`results`, `arrResults`, paths), so concurrent callers must never run at once.
+    /// Public entry points take this queue exactly once and never call each other.
+    private let dbQueue = DispatchQueue(label: "com.viewlift.beacon.dbQueue")
 }
 
 // MARK: - Internal methods
 extension BeaconDBManager {
     func intializeData( dbFilename: String, tableName: String, tableColumnsQuery: String)  {
-        // Set the documents directory path to the documentsDirectory property.
-        let paths: [String] = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
-        documentsDirectory = paths[0]
-        // Keep the database filename.
-        databaseFilename = dbFilename
-        // Create database file in the documents directory if necessary.
-        createDB(dbFileName: dbFilename,tableName: tableName,tableColumnsQuery: tableColumnsQuery)
+        dbQueue.sync {
+            // Set the documents directory path to the documentsDirectory property.
+            let paths: [String] = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
+            guard let documentsPath = paths.first else { return }
+            documentsDirectory = documentsPath
+            // Keep the database filename.
+            databaseFilename = dbFilename
+            // Create database file in the documents directory if necessary.
+            createDB(dbFileName: dbFilename,tableName: tableName,tableColumnsQuery: tableColumnsQuery)
+        }
     }
     
-    func createDB(dbFileName: String, tableName: String, tableColumnsQuery: String) {
+    private func createDB(dbFileName: String, tableName: String, tableColumnsQuery: String) {
         //Build the path to keep the database
         let _database: String = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(dbFileName).absoluteString
         let fileMngr = FileManager.default
@@ -73,39 +81,78 @@ extension BeaconDBManager {
     func loadData(fromDB query: String) -> Array<Dictionary<String,String>> {
         // Run the query and indicate that is not executable.
         // The query string is converted to a char* object.
-        runQuery(query, isQueryExecutable: false)
-        // Returned the loaded results.
-        return (results)
+        return dbQueue.sync {
+            runQuery(query, isQueryExecutable: false)
+            // Returned the loaded results (a value-type copy, safe to use off the queue).
+            return results
+        }
     }
     
     func execute(_ query: String) {
-        // Run the query and indicate that is executable.
-        runQuery(query, isQueryExecutable: true)
+        dbQueue.sync {
+            // Run the query and indicate that is executable.
+            runQuery(query, isQueryExecutable: true)
+        }
+    }
+    
+    /// Adds TEXT columns that were introduced after the table was first created.
+    /// `CREATE TABLE IF NOT EXISTS` does not alter an existing table.
+    func ensureTextColumns(tableName: String, columns: [String]) {
+        dbQueue.sync {
+            addMissingTextColumns(tableName: tableName, columns: columns)
+        }
+    }
+    
+    private func addMissingTextColumns(tableName: String, columns: [String]) {
+        let databasePath: String = URL(fileURLWithPath: documentsDirectory).appendingPathComponent(databaseFilename).absoluteString
+        var database: OpaquePointer?
+        guard sqlite3_open(databasePath, &database) == SQLITE_OK else {
+#if DEBUG
+            debugPrint("Error to open the table for column migration")
+#endif
+            sqlite3_close(database)
+            return
+        }
+        defer { sqlite3_close(database) }
+        
+        let existingColumns = columnNames(in: database, tableName: tableName)
+        for column in columns where !existingColumns.contains(column.lowercased()) {
+            let statement = "ALTER TABLE \(tableName) ADD COLUMN \(column) TEXT DEFAULT ''"
+            if sqlite3_exec(database, statement, nil, nil, nil) != SQLITE_OK {
+#if DEBUG
+                if let error = sqlite3_errmsg(database) {
+                    debugPrint("error adding column \(column): \(String(cString: error))")
+                }
+#endif
+            }
+        }
     }
     
     /// Adds a column to an existing table when missing (safe for already-migrated DBs).
     func addColumnIfNeeded(tableName: String, columnName: String, columnType: String) {
-        guard !documentsDirectory.isEmpty, !databaseFilename.isEmpty else { return }
-        
-        // Match path style used by `runQuery` / `createDB` so we migrate the same DB file.
-        let databasePath = URL(fileURLWithPath: documentsDirectory)
-            .appendingPathComponent(databaseFilename)
-            .absoluteString
-        
-        var sqlite3Database: OpaquePointer?
-        guard sqlite3_open(databasePath, &sqlite3Database) == SQLITE_OK else { return }
-        defer { sqlite3_close(sqlite3Database) }
-        
-        guard tableHasColumn(db: sqlite3Database, tableName: tableName, columnName: columnName) == false else {
-            return
-        }
-        
-        let alterSQL = "ALTER TABLE \(tableName) ADD COLUMN \(columnName) \(columnType)"
-        if sqlite3_exec(sqlite3Database, alterSQL, nil, nil, nil) != SQLITE_OK {
+        dbQueue.sync {
+            guard !documentsDirectory.isEmpty, !databaseFilename.isEmpty else { return }
+            
+            // Match path style used by `runQuery` / `createDB` so we migrate the same DB file.
+            let databasePath = URL(fileURLWithPath: documentsDirectory)
+                .appendingPathComponent(databaseFilename)
+                .absoluteString
+            
+            var sqlite3Database: OpaquePointer?
+            guard sqlite3_open(databasePath, &sqlite3Database) == SQLITE_OK else { return }
+            defer { sqlite3_close(sqlite3Database) }
+            
+            guard tableHasColumn(db: sqlite3Database, tableName: tableName, columnName: columnName) == false else {
+                return
+            }
+            
+            let alterSQL = "ALTER TABLE \(tableName) ADD COLUMN \(columnName) \(columnType)"
+            if sqlite3_exec(sqlite3Database, alterSQL, nil, nil, nil) != SQLITE_OK {
 #if DEBUG
-            let message = sqlite3_errmsg(sqlite3Database).map { String(cString: $0) } ?? "unknown"
-            debugPrint("DB Error adding column \(columnName): \(message)")
+                let message = sqlite3_errmsg(sqlite3Database).map { String(cString: $0) } ?? "unknown"
+                debugPrint("DB Error adding column \(columnName): \(message)")
 #endif
+            }
         }
     }
 }
@@ -208,5 +255,21 @@ private extension BeaconDBManager {
         }
         
         sqlite3_close(sqlite3Database)
+    }
+    
+    func columnNames(in database: OpaquePointer?, tableName: String) -> Set<String> {
+        var statement: OpaquePointer?
+        var names = Set<String>()
+        let pragma = "PRAGMA table_info(\(tableName))"
+        guard sqlite3_prepare_v2(database, pragma, -1, &statement, nil) == SQLITE_OK else {
+            return names
+        }
+        defer { sqlite3_finalize(statement) }
+        
+        while sqlite3_step(statement) == SQLITE_ROW {
+            guard let columnName = sqlite3_column_text(statement, 1) else { continue }
+            names.insert(String(cString: columnName).lowercased())
+        }
+        return names
     }
 }
