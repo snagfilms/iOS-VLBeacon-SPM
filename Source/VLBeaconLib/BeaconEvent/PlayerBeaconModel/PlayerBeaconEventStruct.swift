@@ -51,7 +51,6 @@ public struct PlayerBeaconEventStruct {
     var appversion: String?
     var duration: String?
     var deviceid: String?
-    var siteid: String?
     var source: String?
     var tveProvider: String?
     var anonymousuid: String?
@@ -70,7 +69,7 @@ public struct PlayerBeaconEventStruct {
     var MvPosition: Int?
     var MvWindows: Int?
     
-    public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolution: CGRect? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, siteId: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil, tokenIdentity: TokenIdentity?, programId: String? = nil, title: String? = nil, programStartTime: String? = nil, programEndTime: String? = nil, islivestream: Bool? = nil, userConsent: Bool? = nil, brandname: String? = nil, networkname: String? = nil, mvc_id: String? = nil, mv_selected: String? = nil, mv_position: Int? = nil, mv_windows: Int? = nil) {
+    public init(eventName: PlayerBeaconEventEnum, vid: String? = nil, profid: String? = nil, userId: String? = nil, player: String? = nil,  media_type: String? = nil, tstampoverride: String? = nil, stream_id: String? = nil, dp1: String? = nil, dp2: String? = nil, dp3: String? = nil, dp4: String? = nil, dp5: String? = nil, ref: String? = nil, apos: Int? = nil, apod: Int? = nil, vpos: Int? = nil, url: String? = nil, embedUrl: String? = nil, ttFirstFrame: Int? = nil, bitrate: Int? = nil, connectionSpeed: Int? = nil, resolution: CGRect? = nil, bufferHealth: Int? = nil, plid: String? = nil, fcid: String? = nil, seriesid: String? = nil, seasonid: String? = nil, seasonnumber: String? = nil, subscription_type: String? = nil, mvpdprovider: String? = nil, guid: String? = nil, appversion: String? = nil, duration: String? = nil, environment: String? = nil, source: String?, tveProvider: String? = nil, additionalData: [String: Any]? = nil, tokenIdentity: TokenIdentity?, programId: String? = nil, title: String? = nil, programStartTime: String? = nil, programEndTime: String? = nil, islivestream: Bool? = nil, userConsent: Bool? = nil, brandname: String? = nil, networkname: String? = nil, mvc_id: String? = nil, mv_selected: String? = nil, mv_position: Int? = nil, mv_windows: Int? = nil) {
         
         if NetworkStatus.sharedInstance.isNetworkAvailable() {
             guard let tokenId = tokenIdentity ?? VLBeacon.getInstance().tokenIdentity else { return }
@@ -90,13 +89,7 @@ public struct PlayerBeaconEventStruct {
             } else {
                 self.deviceid = Utility.sharedInstance.getUUID()
             }
-            
-            if let siteID = tokenId.siteId {
-                self.siteid = siteID
-            } else {
-                self.siteid = siteId
-            }
-            
+            // Player beacon does not carry `siteid`; the site is sent as `aid` / `cid`.
             self.aid = tokenId.siteName ?? ""
             self.cid = tokenId.siteId ?? ""
             if let id = programId, !id.isEmpty {
@@ -223,7 +216,7 @@ extension PlayerBeaconEventStruct: BeaconEventBodyProtocol {
         
         let customDataString: String? = self.additionaldata?.jsonString()
         
-        queryToAddBeaconEvent = "insert into \(BeaconDBConstants().PLAYERTABLENAME)  (aid, cid, pfm, vid, uid, profid, pa, player, environment, media_type, tstampoverride , stream_id, dp1, dp2, dp3, dp4, dp5, ref, apos, apod, vpos, url, embedUrl, ttfirstframe, bitrate, connectionspeed, resolutionheight , resolutionwidth, bufferhealth, plid, fcid, seriesid, seasonid, seasonnumber, tstamp, subscription_type, mvpdprovider, guid, appversion, duration, deviceid, siteid, source, tveprovider, additionalData ) values('\(self.aid ?? "")','\(self.cid ?? "")','\(self.pfm ?? "")','\(self.vid ?? "")','\(self.uid ?? "")','\(self.profid ?? "")','\(self.pa ?? "")','\(self.player ?? "")','\(self.environment ?? "")','\(self.media_type ?? "")','\(self.tstampoverride ?? "")','\(self.stream_id ?? "")','\(self.dp1 ?? "")','\(self.dp2 ?? "")','\(self.dp3 ?? "")','\(self.dp4 ?? "")','\(self.dp5 ?? "")','\(self.ref ?? "")','\(self.apos ?? "")','\(self.apod ?? "")','\(self.vpos ?? "")','\(self.url ?? "")','\(self.embedUrl ?? "")','\(self.ttFirstFrame ?? "")','\(self.bitrate ?? "")','\(self.connectionSpeed ?? "")','\(self.resolutionheight ?? "")','\(self.resolutionwidth ?? "")','\(self.bufferHealth ?? "")','\(self.plid ?? "")','\(self.fcid ?? "")','\(self.seriesid ?? "")','\(self.seasonid ?? "")','\(self.seasonnumber ?? "")','\(self.tstamp ?? "")','\(self.subscription_type ?? "")','\(self.mvpdprovider ?? "")','\(self.guid ?? "")','\(self.appversion ?? "")','\(self.duration ?? "")','\(self.deviceid ?? "")','\(self.siteid ?? "")','\(self.source ?? "")','\(self.tveProvider ?? "")','\(customDataString ?? "")')"
+        queryToAddBeaconEvent = "insert into \(BeaconDBConstants().PLAYERTABLENAME)  (aid, cid, pfm, vid, uid, profid, pa, player, environment, media_type, tstampoverride , stream_id, dp1, dp2, dp3, dp4, dp5, ref, apos, apod, vpos, url, embedUrl, ttfirstframe, bitrate, connectionspeed, resolutionheight , resolutionwidth, bufferhealth, plid, fcid, seriesid, seasonid, seasonnumber, tstamp, subscription_type, mvpdprovider, guid, appversion, duration, deviceid, siteid, source, tveprovider, additionalData ) values('\(self.aid ?? "")','\(self.cid ?? "")','\(self.pfm ?? "")','\(self.vid ?? "")','\(self.uid ?? "")','\(self.profid ?? "")','\(self.pa ?? "")','\(self.player ?? "")','\(self.environment ?? "")','\(self.media_type ?? "")','\(self.tstampoverride ?? "")','\(self.stream_id ?? "")','\(self.dp1 ?? "")','\(self.dp2 ?? "")','\(self.dp3 ?? "")','\(self.dp4 ?? "")','\(self.dp5 ?? "")','\(self.ref ?? "")','\(self.apos ?? "")','\(self.apod ?? "")','\(self.vpos ?? "")','\(self.url ?? "")','\(self.embedUrl ?? "")','\(self.ttFirstFrame ?? "")','\(self.bitrate ?? "")','\(self.connectionSpeed ?? "")','\(self.resolutionheight ?? "")','\(self.resolutionwidth ?? "")','\(self.bufferHealth ?? "")','\(self.plid ?? "")','\(self.fcid ?? "")','\(self.seriesid ?? "")','\(self.seasonid ?? "")','\(self.seasonnumber ?? "")','\(self.tstamp ?? "")','\(self.subscription_type ?? "")','\(self.mvpdprovider ?? "")','\(self.guid ?? "")','\(self.appversion ?? "")','\(self.duration ?? "")','\(self.deviceid ?? "")','\(self.source ?? "")','\(self.tveProvider ?? "")','\(customDataString ?? "")')"
         
         return queryToAddBeaconEvent
         

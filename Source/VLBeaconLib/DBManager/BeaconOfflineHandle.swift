@@ -77,7 +77,7 @@ extension BeaconOfflineHandle {
                     eventDict.removeValue(forKey: "eventType")
                     
                     // Process event dictionary
-                    processEventDict(&eventDict, beaconInstance: beaconInstance)
+                    processEventDict(&eventDict, beaconInstance: beaconInstance, eventType: eventType)
                     
                     // Append to appropriate event type array
                     switch eventType {
@@ -108,13 +108,17 @@ extension BeaconOfflineHandle {
 // MARK: - Private methods
 private extension BeaconOfflineHandle {
     // Helper function to process event dictionary
-    static func processEventDict(_ eventDict: inout [String: Any], beaconInstance: VLBeacon) {
+    static func processEventDict(_ eventDict: inout [String: Any], beaconInstance: VLBeacon, eventType: BeaconType) {
         guard let uID = beaconInstance.tokenIdentity?.userId as? String else { return }
         
         let anonymousId = beaconInstance.tokenIdentity?.anonymousId as? String
         
-        eventDict["aid"] = beaconInstance.tokenIdentity?.siteName ?? ""
-        eventDict["cid"] = beaconInstance.tokenIdentity?.siteId ?? ""
+        // aid / cid belong to Player beacons only; User beacons carry `siteid` instead.
+        if eventType == .player {
+            eventDict["aid"] = beaconInstance.tokenIdentity?.siteName ?? ""
+            eventDict["cid"] = beaconInstance.tokenIdentity?.siteId ?? ""
+            eventDict.removeValue(forKey: "siteid")
+        }
         
         if let anonymousId = anonymousId, !anonymousId.isEmpty {
             if eventDict["profid"] == nil || (eventDict["profid"] as? String ?? "").isEmpty {
