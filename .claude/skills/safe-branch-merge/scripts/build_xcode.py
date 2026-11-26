@@ -17,7 +17,9 @@ Usage (run from anywhere; macOS with Xcode):
 
 Steps:
   1. xcodebuild -resolvePackageDependencies (once) → logs Package.resolved changes vs HEAD
+  1b. every application / app-extension target must be built by some scheme → otherwise MISSING_SCHEME (fail)
   2. for each scheme (sequential): detect platform → build for generic simulator destination
+     (packages: only the revisions in Package.resolved; --allow-package-updates to let Xcode move them)
   3. failure classification:
        ENVIRONMENT  lock / stale module / resolve / destination / disk problems → one automatic retry
                     (clean build of that scheme, still sequential); still failing → ENV_FAIL
@@ -76,6 +78,10 @@ def main():
     ap.add_argument("--skip-resolve", action="store_true")
     ap.add_argument("--include-tests", action="store_true")
     ap.add_argument("--timeout", type=int, default=1800)
+    ap.add_argument("--allow-package-updates", action="store_true",
+                    help="let Xcode update packages; default builds ONLY the revisions in Package.resolved (branch pins move)")
+    ap.add_argument("--require-target", action="append", default=[],
+                    help="app/extension targets that must be built (default: every application/app-extension target in the project)")
     a = ap.parse_args()
 
     repo = os.path.abspath(os.path.expanduser(a.repo))
@@ -94,10 +100,12 @@ def main():
     print(f"container: {ws or pj}\nDerivedData: {dd}\nlogs: {logs}")
 
     results, started = [], datetime.datetime.now().isoformat(timespec="seconds")
+    # build exactly the package revisions recorded in Package.resolved (branch-pinned packages move otherwise)
+    pkg_flags = [] if a.allow_package_updates else ["-onlyUsePackageVersionsFromResolvedFile", "-disableAutomaticPackageResolution"]
     # 1. resolve packages once
     resolve = {"status": "SKIPPED"}
     if not a.skip_resolve:
-        rc, out, secs = sh(["xcodebuild", "-resolvePackageDependencies", *container, "-derivedDataPath", dd],
+        rc, out, secs = sh(["xcodebuild", "-resolvePackageDependencies", *container, "-derivedDataPath", dd, *pkg_flags],
                            repo, a.timeout, os.path.join(logs, "_resolvePackageDependencies.log"))
         resolve = {"status": "OK" if rc == 0 else "FAILED", "seconds": secs,
                    "errors": [l for l in out.splitlines() if "error" in l.lower()][:10]}
@@ -107,7 +115,7 @@ def main():
         if rc != 0:
             print("\n".join(resolve["errors"]))
 
-    # 2. schemes
+    # 2. schemes — and every app / extension target must be covered by one of them
     schemes = a.scheme
     if not schemes:
         rc, out, _ = sh(["xcodebuild", "-list", "-json", *container], repo, 300)
@@ -118,7 +126,25 @@ def main():
             sys.exit("Could not list schemes:\n" + out[-2000:])
         if not a.include_tests:
             schemes = [s for s in schemes if not re.search(r"(Tests?|UITests?)$", s)]
+    apps = list(a.require_target)
+    if not apps:
+        for pbx in glob.glob(os.path.join(repo, "**", "*.xcodeproj", "project.pbxproj"), recursive=True):
+            if "/Pods/" in pbx or "/.build/" in pbx or "/SourcePackages/" in pbx:
+                continue
+            t = open(pbx, encoding="utf-8", errors="replace").read()
+            for blk in re.findall(r"=\s*\{\s*isa = PBXNativeTarget;(.*?)\n\t*\};", t, re.S):
+                nm = re.search(r'\n\s*name = "?([^";]+)"?;', blk)
+                pt = re.search(r'productType = "com\.apple\.product-type\.([^"]+)"', blk)
+                if nm and pt and pt.group(1).split(".")[0] in ("application", "app-extension", "tv-app-extension"):
+                    apps.append(nm.group(1))
+    built_targets = set(schemes)
+    for s in schemes:
+        for f in glob.glob(os.path.join(repo, "**", f"{s}.xcscheme"), recursive=True):
+            built_targets |= set(re.findall(r'BlueprintName = "([^"]+)"', open(f, errors="replace").read()))
+    uncovered = sorted(set(apps) - built_targets)
     print("schemes (sequential): " + ", ".join(schemes))
+    if uncovered:
+        print("REQUIRED targets with no scheme in this list: " + ", ".join(uncovered))
 
     for s in schemes:
         rc, out, _ = sh(["xcodebuild", "-showBuildSettings", "-json", *container, "-scheme", s,
@@ -133,7 +159,7 @@ def main():
             plat = "tvOS" if re.search(r"tv", s, re.I) else "iOS"
         dest = "generic/platform=macOS" if plat == "macOS" else f"generic/platform={plat} Simulator"
         base_cmd = ["xcodebuild", *container, "-scheme", s, "-configuration", a.configuration, "-destination", dest,
-                    "-derivedDataPath", dd, "CODE_SIGNING_ALLOWED=NO", "-skipPackagePluginValidation", "-skipMacroValidation"]
+                    "-derivedDataPath", dd, *pkg_flags, "CODE_SIGNING_ALLOWED=NO", "-skipPackagePluginValidation", "-skipMacroValidation"]
         log = os.path.join(logs, f"{s}.log")
         print(f"→ {s} ({plat}) …", flush=True)
         rc, out, secs = sh(base_cmd + ["build"], repo, a.timeout, log)
@@ -152,13 +178,19 @@ def main():
                         "log": log})
         print(f"  {status} in {secs}s" + (f" — {code[0][:160]}" if code else f" — {env[0][:160]}" if env and not ok else ""), flush=True)
 
+    for t in uncovered:
+        results.append({"scheme": f"(target {t})", "platform": "?", "status": "MISSING_SCHEME", "seconds": 0, "attempts": 0,
+                        "code_errors": [], "env_errors": [f"app/extension target '{t}' is not built by any scheme here — share its scheme "
+                                                         "in Xcode (Manage Schemes → Shared) or pass --scheme / --require-target"],
+                        "duplicate_build_files": [], "log": ""})
     allok = all(r["status"] == "SUCCEEDED" for r in results) and resolve.get("status") in ("OK", "SKIPPED")
     summary = {"started": started, "finished": datetime.datetime.now().isoformat(timespec="seconds"), "repo": repo,
                "container": ws or pj, "derived_data": dd, "resolve": resolve, "results": results, "all_succeeded": allok}
     json.dump(summary, open(os.path.join(out_dir, "build-summary.json"), "w"), indent=1)
     md = [f"# Build summary — {'ALL SUCCEEDED' if allok else 'NOT ALL SUCCEEDED'}", "",
           f"Container `{ws or pj}` · DerivedData `{dd}` · sequential builds · {summary['finished']}", "",
-          f"Packages: {resolve.get('status')} — Package.resolved changes: {resolve.get('package_resolved_changes', 'n/a')}", "",
+          f"Packages: {resolve.get('status')} — Package.resolved changes: {resolve.get('package_resolved_changes', 'n/a')}"
+          + ("" if a.allow_package_updates else " · built with the Package.resolved revisions only"), "",
           "| Scheme | Platform | Result | Time | Attempts | First error |", "|---|---|---|---|---|---|"]
     for r in results:
         first = (r["code_errors"] or r["env_errors"] or [""])[0].replace("|", "\\|")[:180] if r["status"] != "SUCCEEDED" else ""

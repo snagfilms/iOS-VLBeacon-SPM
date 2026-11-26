@@ -14,6 +14,7 @@ Works with the `safe-branch-merge` skill (SKILL.md next to this file, or the ski
 - Merge with `git merge --no-ff --no-commit` and leave the result staged and uncommitted.
 - Don't **offer** to commit either. Not for the merge, not for the skill's own files, not "just this one file". If something needs committing first, the developer does it.
 - At the end, hand over a ready commit message + description (`COMMIT_MSG.txt`) and the command the developer can run themselves.
+- Before hand-over, a merge must still be in progress (`MERGE_HEAD` present; `commit_message.py` exits 4 otherwise). Never run `git merge --quit` or anything that drops the merge state unless the developer asked for a plain commit — otherwise the commit doesn't record the source branch as merged.
 - Allowed git writes: `fetch` (incl. the private ref `refs/merge-guard/source`), `merge --no-commit`, staging (`add`, `rm`, `mv`, `checkout --ours/--theirs -- <file>`) while resolving, and a local backup tag `merge-guard/backup/<REPORT_ID>`. A `stash` is allowed only after the developer says yes.
 - Never run `reset --hard`, `checkout -- .`, `clean -fd`, `stash drop`, `branch -D`, `tag -d`, `merge --abort`, or delete files without an explicit yes.
 
@@ -40,7 +41,10 @@ Works with the `safe-branch-merge` skill (SKILL.md next to this file, or the ski
   - check whether target already does it elsewhere, or removed it on purpose (`git log -S`);
   - make sure proposed code only uses identifiers that exist in target;
   - record `ai_confidence`, `ai_evidence`, and a one-line why.
-- **Independent check:** high-severity items and anything that drops source code get a second review. That's a separate sub-agent when the editor has them, otherwise a deliberate second pass that tries to prove the opposite. A disagreement is escalated, never averaged.
+- **Never clear a doubt by editing numbers.** Review results enter `analysis.json` only through `apply_review.py` (history kept). Raising a confidence, dropping `escalate`, or turning CUSTOM into an option is allowed only with a `change_reason` that names the new evidence plus a separate independent check; otherwise the item goes to the developer.
+- **Independent check:** high-severity items and anything that drops or rewrites source code get a second review. Its `check_note` says what was verified; boilerplate ("Agrees.", "Adopted agent recommendation") counts as no check. That's a separate sub-agent when the editor has them, otherwise a deliberate second pass that tries to prove the opposite. A disagreement is escalated, never averaged.
+- Anything that depends on an **external contract** (backend schema/behaviour, another repo's API or version) is escalated with the exact question, even if it compiles.
+- A developer override that would revert target's refactor, or break another decided item, is explained (what it removes or breaks) and confirmed before it's applied; offer the behaviour-preserving reading.
 - **The AI never drops source code or behaviour without evidence** (target already does it, removed on purpose by commit X, no callers). Without evidence it escalates. It never replaces branch-specific values with source's on its own. `CUSTOM` and business choices go to the developer.
 - Always ask for the source branch, target branch, source folder and target folder if the request doesn't name them. Never guess them.
 - Escalations show the **developer name, date, commit and old/new snippet** of the conflicting lines.
@@ -49,9 +53,21 @@ Works with the `safe-branch-merge` skill (SKILL.md next to this file, or the ski
 - **Different folder structure:** compare a source file only with the target file that really holds the same code. Confirmed means: same path, git rename, a folder move backed by other files, or confirmed by the developer in `path-map.json`. A shared file name alone is never enough, especially for common names like `Info.plist`, `CodeResources`, `Contents.json`, `Package.swift`. If unsure, don't compare or label anything: ask, record the answer in `path-map.json`, and re-run the analysis.
 - **The AI builds the file map, not the developer.** When structure differs, run `propose_file_map.py`, verify every entry by reading the code, and write `file-map.json` with `decided_by: "ai"`, confidence and a reason. Map at **function** level when logic was split or optimised into other files. For files only in source, choose the owning module, the folder and the build targets (Xcode targets / SPM target). Ask the developer only about rows you can't verify (`needs_developer`), in one compact table; never ask them to confirm everything.
 - When the structure differs, don't run a plain `git merge`; port each change into its mapped target file.
+- **Parallel implementations:** even when the structure is "same", check source changes against look-alikes in new modules (`classify_items.py` → `counterparts`, e.g. ViewliftOne). Decide `port` / `not-needed` for each, with a reason. A fix that lands only in a legacy file the new module replaced is lost behaviour.
+- AI recommendations on Review items are decisions: if it isn't "take source", the merge follows it; git's auto-merge never silently overrides it.
+- Record `depends_on` between items; an item follows the answer of an escalated item it depends on.
 - Vendored `.xcframework` / `.framework` / `.bundle` folders are handled as one unit (keep, take whole, or replaced by a package with a pin), never file by file. User state (`xcuserdata`, `.xcuserstate`, `.DS_Store`, DerivedData) is ignored.
 - Unknown build command, post-merge step or protected file → ask, and offer to save the answer in `<repo>/.merge-guard.json`.
 - When the structure differs, record the port as a merge by default (`git merge --no-commit -s ours` + port every item, after coverage passes) unless `.merge-guard.json` says `"record_as_merge": false`. In the summary, tell the developer that `git merge --quit` drops the merge record but keeps the changes.
+
+## 3b. Whole-repository conditions (any project)
+- **Read the repository's own rules first** (CLAUDE.md, AGENTS.md, `.cursor/rules`, other merge skills — preflight lists them as `RULES`). Every decision and port follows them; the stricter rule wins.
+- **Never let a merge silently undo a deliberate revert** on target (`REVERT_REINTRODUCED`), and **never merge something that looks like a credential** (`SECRET`) without the owner's OK.
+- **Generated code is regenerated, never hand-merged** (`GENERATED`; generator commands in `.merge-guard.json` → `regenerate`).
+- **Every app / extension target is built**, not just the schemes that happen to be shared; packages build at the `Package.resolved` revisions only.
+- Post-merge commands run through `run_post_merge.py`, so their edits to tracked or merged files are recorded and reviewed.
+- After the developer's commit, `verify_commit.py` proves the merge was recorded and the committed content equals the hand-over; again after the PR lands.
+- Project specifics live in `.merge-guard.json`, never in the scripts. In zsh, quote git object paths as `"${REF}:path"`.
 
 ## 4. Protect local work
 - Analysis (phase 1) is read-only.
@@ -64,10 +80,14 @@ Works with the `safe-branch-merge` skill (SKILL.md next to this file, or the ski
 - The report separates "Needs you" (escalated), "Decided by AI" (each with confidence, evidence and the independent check) and "Decided by developer". The developer can override any AI decision before committing.
 - The report header shows: Report ID, AI tool/editor used, chat/session id (or `unknown`), both folder paths, both branches with head commits, merge-base, and how to resume.
 - Every decision item shows the developers on each side, dates, commits, base / source / target snippets, AI analysis, AI recommendation and proposed code.
+- The report pairs those developers ("Who needs to talk to whom": incoming author ↔ current author, blocking cards first) and can copy the table as Slack text or as an image; point developers to it when items need people.
+- `report.html` is produced only by `render_report.py` and always has the developer review tools: per-card **Reviewed / Pending** state, the **Ready to merge** gate, the **Developer** filter and pending list, multi-file **Import** with reviewer-disagreement detection, and persistence (browser storage + Chrome/Edge auto-save file). Don't hand-edit a report; change the script.
+- A card counts as reviewed only when a person changed the option, wrote their own note, or ticked "Mark reviewed". A pre-selected AI option alone is never reported as developer-reviewed.
 
 ## 6. Resume safely
 - On "resume merge report <ID>", reload the decisions and re-run preflight. Check both folders are still on the recorded branches and clean (ask to stash otherwise). Compare heads with the report; new commits → analyse the delta and get decisions first.
 - Missing, ambiguous, or CUSTOM-without-notes decisions → ask before touching code.
+- Reviewers disagree (`CONFLICT` from `parse_decisions.py`, or `status: "CONFLICT"` in an export) → name each reviewer and their option and ask which is final. Never pick one, average, or let the last file win.
 - A developer answer must be explicit for the item it answers. A name, "ok" or "proceed" doesn't answer a specific question — ask again. AI decisions stand unless the developer overrides them.
 
 ## 7. After the merge

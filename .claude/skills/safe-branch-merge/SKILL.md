@@ -31,6 +31,7 @@ description: >-
 3. File-map rows are marked `needs_developer`, or `auto_decide.py` escalates items. See its hard rules: low confidence, a second-check disagreement, dropping source code without evidence, branch-specific values, a missing proposal.
 4. A **business choice** the code can't settle: both sides changed a value, flag, threshold, endpoint, analytics/event name, consent/privacy, payment, auth, DRM or security behaviour differently, with no evidence which one is intended.
 5. A port or build fix would **change behaviour** beyond what the decided items say.
+5b. Correctness depends on an **external contract** the repo can't prove: a backend REST/GraphQL schema (e.g. "does the server input type accept this field?"), server behaviour, or another repo's API or package version. Ask the exact question the developer can forward to that team.
 6. `verify_coverage.py` reports `MISSING` code you can't restore with confidence, or an `ENV_FAIL` / missing toolchain blocks the build.
 7. Anything destructive that no decision covers (deleting files/folders, discarding local work).
 
@@ -41,6 +42,10 @@ Everything else: decide, record the evidence, continue, and list it in the final
 Follow the rule [safe-branch-merge.mdc](safe-branch-merge.mdc) at all times. Categories, edge cases, config and schema: [reference.md](reference.md).
 `SKILL_DIR` = the folder containing this file (wherever it was installed: `.claude/skills/…`, `.ai-skills/…`, or anywhere else).
 Scripts need only `git`, `bash` and `python3` (3.8+) and run on macOS, Linux and WSL.
+
+**Generic by design.** Nothing in the scripts is tied to one project: they detect the stack (Xcode app, Swift package, framework with a podspec, Gradle, Node …) and read everything project-specific from `<repo>/.merge-guard.json` (protected files, post-merge and generator commands, generated-code globs, parallel modules, required build targets, lint and test commands). When a project needs something new, add it there, not in the scripts.
+
+**Shell safety (zsh):** write git object paths as `"${REF}:path/to/file"` — in zsh `$REF:A…`, `:h`, `:t`, `:r`, `:e` are path modifiers and silently turn the argument into a different path.
 
 ---
 
@@ -80,7 +85,12 @@ Resolve every `BLOCK` by asking the developer:
 - **Target folder on a different branch** → ask before switching.
 - **Merge, rebase or cherry-pick in progress** → ask them to finish or abort it.
 
-Put the `WARN` lines into your notes for the report.
+Put the `WARN` lines into your notes for the report. Act on these preflight lines:
+- **`RULES …`** — the repository's own rules for agents and contributors (CLAUDE.md, AGENTS.md, `.cursor/rules`, another merge skill …). **Read them before reviewing anything** and follow them in every decision and port (e.g. "no Apollo types inside the new module", "legacy code stays minimal"). If the repo has its own merge skill, do both: where they differ, the stricter rule wins; tell the developer.
+- **Installed skill copy differs** — agents in that repo run older rules. Tell the developer to re-run `install.sh` (and commit it if the team shares it).
+- **Other worktrees / stashes** — work there is not part of the merge; list it. The target branch checked out in another worktree is a `BLOCK`.
+- **Commit hooks** — tell the developer they will run on their commit; `verify_commit.py` checks afterwards that they didn't change the merged content.
+- **Case-only paths** — a case-insensitive disk keeps one of them; never "fix" by deleting one without asking.
 
 The profile gives you protected globs, post-merge commands and build commands. If it says `ask_developer: true`, ask for the build command now and offer to save it in `<target>/.merge-guard.json` (template: `project_profile.py <repo> --example-config`).
 
@@ -94,6 +104,25 @@ python3 "$SKILL_DIR/scripts/collect_changes.py" \
   --protect <globs from the profile> [--since <commit|date>]
 ```
 `REPORT_ID` = `MRG-<YYYYMMDD-HHMM>-<source>-into-<target>`. If `~/Downloads` is not writable (sandboxed editor), ask for access; if that's refused, use another folder and say where.
+
+Then, and after **every** re-run of `collect_changes.py`:
+```bash
+python3 "$SKILL_DIR/scripts/classify_items.py" ~/Downloads/merge-reports/<REPORT_ID>/analysis.json
+```
+- **IB_METADATA:** XIB/storyboard hunks whose only change is the client module name (with `customModuleProvider="target"`) or the Interface Builder tool version are decided "keep target" by rule, so sibling hunks are handled the same way.
+- **Look-alikes (parallel implementations):** the structure can be "same" while target rebuilt a screen or service in a new module (ViewliftOne: `AppCMS/ViewliftOne/…/VLOneMonetizationBadgeView.swift` next to legacy `VLMonetizationBadgeView.swift`). Items whose file has a same-named counterpart there get `counterparts` (with the identifiers the counterpart does / doesn't use). Set the modules in `.merge-guard.json` → `"parallel_modules": ["AppCMS/ViewliftOne/"]`; otherwise they are detected.
+
+Then the repository-wide scan (after every re-run too):
+```bash
+python3 "$SKILL_DIR/scripts/risk_scan.py" ~/Downloads/merge-reports/<REPORT_ID>/analysis.json
+```
+It writes `repo_risks` (top of report.html) and flags items. Handle each code (details: reference.md → "Repository risks"):
+- `REVERT_REINTRODUCED` — target reverted a change on purpose and source still carries it: the item escalates; show the revert commit.
+- `SECRET` — source adds something that looks like a credential: escalates; never merge it without the owner's OK.
+- `GENERATED` — generated code is kept as target; run the generator after the merge (`regenerate` in `.merge-guard.json`).
+- `APP_SCHEMES` — app/extension targets without a shared scheme: build them explicitly (`--require-target`), and tell the developer.
+- `BUILD_SETTINGS`, `DEPENDENCIES`, `CORE_DATA`, `UTF16_STRINGS`, `CASE`, `MERGE_BASES`, `DUPLICATE_SUBJECTS`, `TOOLING` — review and mention in the summary; ask only where a decision is needed.
+"Needs action" risks go into the one question message with the escalations.
 
 Unrelated histories (the target is a copied/re-imported repo): the script stops. Ask the developer for the last sync point (commit or date) and re-run with `--since`. Never guess it.
 
@@ -134,7 +163,13 @@ Never review, recommend on, or label a change that was matched to a target file 
 ### 1.3 Review every item from the code logic (this is the real work)
 Review **every** item with `needs_decision: true`, and every `NEAR_CHANGE`, `RESTRUCTURED`, `NEW_SYMBOL`, `NEW_FILE`, `PROJECT_FILE` and `VENDORED_BUNDLE` item.
 
-**Many items?** If your editor can run sub-agents (Cursor Task, Claude Code agents …), split the review into batches by module/file and give each reviewer this checklist, the item ids and `analysis.json`. Merge their results into `analysis.json` yourself and check each one for completeness.
+**Many items?** If your editor can run sub-agents (Cursor Task, Claude Code agents …), split the review into batches by module/file and give each reviewer this checklist, the item ids and `analysis.json`.
+
+**Results enter analysis.json only through `apply_review.py`** (never by editing the AI fields by hand):
+```bash
+python3 "$SKILL_DIR/scripts/apply_review.py" <report>/analysis.json <report>/review-queue/batch_*.results.json --by <reviewer>
+```
+It keeps every version in `ai_history`. **Never raise a confidence, drop `escalate`, or change CUSTOM to an option to get past the threshold.** If new evidence really settles an earlier doubt, give `change_reason` (what you found that the first review didn't have) and a real independent check by a separate reviewer; otherwise `auto_decide.py` escalates the item. Direct edits are detected and recorded as "edited directly".
 
 **Checklist per item: read code, not snippets.**
 1. Read the **whole function or type** in all three versions (base, source, target): `git -C <target_folder> show <ref>:<path>`. The refs are in analysis.json: `analysis_base`, `source.ref`, `target.ref`.
@@ -150,35 +185,45 @@ Review **every** item with `needs_decision: true`, and every `NEAR_CHANGE`, `RES
    - `ai_evidence`: the concrete proof, e.g. "target already does X at File.swift:120", "removed on purpose in abc123 by <name> ('…')", "no callers", "identical behaviour, different form". Required whenever the choice drops source code or behaviour.
    - `ai_confidence`: **0.9+** proven by code or commit history; **0.8–0.9** strong reading, consistent with callers; **< 0.8** a doubt remains → it will escalate.
    - `escalate: true` + `escalate_reason`: for any business choice the code can't settle (see the stop list), even when you lean one way.
+   - `external_dependency`: the exact question, whenever the proposal relies on something outside the repo (new or changed field in a backend request, a server schema, another package's API). Code that only *compiles* doesn't prove the server accepts it.
 7. For `NEW_FILE` and `NEW_SYMBOL`: confirm the folder/file, the build targets (Xcode `pbx_targets.py`, SPM target, Gradle module …), imports and access levels.
 8. When you name developers, use only `source_authors` / `target_authors`. They're line-exact; if a list is empty, say the exact author wasn't found.
 9. Check `CLEAN` items for dependencies on something target removed or renamed, and upgrade those to decision items.
+10. **Dependencies between items:** when a decision relies on another item ("pairs with M-0333", "the helper arrives with CLEAN M-0345", "follows M-0132"), list them in `depends_on`. Verify that the other item really supplies what you rely on (the function / property exists in its source lines and that item is not decided TARGET). An item that depends on an escalated item is escalated with it.
+11. **Look-alikes (`counterparts`):** open each counterpart and decide whether the source change (business rule, CMS key, API argument) must also be ported there. Set `counterpart_verdict`: `port` (and say where in `counterpart_note`) or `not-needed` (why, e.g. "ViewliftOne screen reads the same key via MonetizationBadgeParser"). Do this for CLEAN items too.
+12. **Review items (NEAR_CHANGE, PROJECT_FILE, NEW_FILE …) are decisions too.** If your recommendation is not "take source", `auto_decide.py` records it as the item's decision and the merge must follow it. "Accept the git auto-merge" is `SOURCE`, not `BOTH`.
 
 ### 1.35 Independent check (fresh eyes)
 Every `high`-severity item, and every item whose choice drops source code or behaviour, gets a second review.
 - **With sub-agents:** run a **separate** checker. Give it the item, the code access and the checklist, but not your conclusion. Then compare its answer with yours.
 - **Without sub-agents:** do a deliberate second pass yourself: re-read the three versions and the callers from scratch, and try to prove the opposite decision.
 
-Record `check_verdict` (`agree` / `disagree`) and `check_note`. A disagreement is escalated, never averaged.
+Record `check_verdict` (`agree` / `disagree`), `check_by` (who checked: the sub-agent's name, or `second pass`) and `check_note` — **what the checker verified and how it tried to prove the opposite**, in a real sentence. "Agrees.", "Adopted agent recommendation", "Second pass settled X" are rejected as boilerplate. A disagreement is escalated, never averaged.
 
 ### 1.4 Decide, render, continue
 ```bash
 python3 "$SKILL_DIR/scripts/auto_decide.py" ~/Downloads/merge-reports/<REPORT_ID>/analysis.json   # --threshold from .merge-guard.json (default 0.8)
 python3 "$SKILL_DIR/scripts/render_report.py" ~/Downloads/merge-reports/<REPORT_ID>/analysis.json
 ```
-- `auto_decide.py` sets `decision` + `decided_by: "ai"` on everything you proved, and lists the **escalations** (exit 2).
+- `auto_decide.py` sets `decision` + `decided_by: "ai"` on everything you proved — needs-decision **and** reviewed Review items — and lists:
+  - **RECHECK (exit 3) — your work, not the developer's:** a missing or boilerplate independent check on a high-severity / code-dropping / rewriting choice, or a look-alike without `counterpart_verdict`. Fix them (apply_review.py) and re-run. If a separate check is truly impossible, escalate the item instead.
+  - **Escalations (exit 2):** the hard rules, plus "an earlier doubt was cleared without change_reason" and "depends on an escalated item".
 - **Escalations:** ask the developer **once**, in one compact table: `ID | file → function | what source does | what target does | your lean + why | the question`. Mention that the full cards are in `report.html` → "Needs you". Record each answer as that item's `decision` with `decided_by: "developer"` and quote their words in `decision_notes`. A name, "ok" or "proceed" is not an answer to a specific question; ask again. Re-run `auto_decide.py` and continue.
 - **No escalations:** tell the developer in 2–3 lines where the report is, how many items the AI decided and how many were auto-merged, and that you're **continuing with the merge now**. Don't wait.
-- **Review mode** only: stop here and wait for `Resume merge report <REPORT_ID>`.
+- **Review mode** only: stop here and wait for `Resume merge report <REPORT_ID>`. Tell the developers how to use the page: share the **Who needs to talk to whom** table in Slack (Copy as text / Copy as image) so each developer pair meets on its blocking cards first, filter by their name, pick / comment / tick **Mark reviewed** on their cards, keep progress with **Auto-save to file…** (Chrome/Edge) or **Export decisions**, and that the merge owner can **Import** everyone's files and watch the **Ready to merge** chip. Details: reference.md → "Developer review page".
+- Only `render_report.py` writes `report.html`. Never hand-edit or regenerate the page in another way; improvements go into the script so every report gets them. Re-rendering a report keeps developers' browser progress (it is keyed by the Report ID), but new cards start as pending.
 
 ## Phase 2 — Merge (never commit)
 Runs straight after Phase 1 in autonomous mode, or on "Resume merge report <ID>" in review mode / a new chat.
 
 ### 2.1 Reload and re-check
 1. Load `~/Downloads/merge-reports/<ID>/analysis.json`. Ask for the path if it isn't there.
-2. If the developer exported decisions or edited `report.md` (overrides, or review mode), run `python3 "$SKILL_DIR/scripts/parse_decisions.py" <analysis.json>`. Exit code 2 lists items still open (`MISSING` / `AMBIGUOUS` / `CUSTOM-WITHOUT-NOTES`). Ask about only those, in one message.
+2. If the developer exported decisions or edited `report.md` (overrides, or review mode), run `python3 "$SKILL_DIR/scripts/parse_decisions.py" <analysis.json>`. It reads every `decisions-*.json` in the report folder (one per developer, the merge owner's combined export, or the auto-save file). Exit code 2 lists items still open (`MISSING` / `AMBIGUOUS` / `CUSTOM-WITHOUT-NOTES` / `CONFLICT`). Ask about only those, in one message; for a `CONFLICT` name each reviewer and their option and ask which one is final.
+   - If the file's `readiness` says `BLOCKED`, say so and list the blockers before merging.
+   - A pre-selected AI option the developer never touched is **not** a developer decision; `reviewed_by` shows who actually reviewed each card.
    - A developer decision must be explicit for that item: a name, "ok" or "proceed" doesn't answer a specific question.
    - AI decisions (`decided_by: "ai"`) stand unless the developer overrides them.
+   - **Overrides that would break things:** a developer may pick "Replace with source code as-is" (`SOURCE`) on code target refactored or optimised, or a choice that breaks another decided item (a changed signature, a removed type). Before applying it, show in one table what the literal choice removes or breaks. Offer the **behaviour-preserving reading** (source's business rule kept inside target's code), and ask once: behaviour-preserving (recommended) or literal. Don't apply either reading silently.
 3. Re-run preflight with the recorded folders and branches.
    - Same branches and clean → continue.
    - Local changes → ask the developer to stash first.
@@ -206,7 +251,9 @@ Then go through **every item**, not only the ones git flags:
 | `CONFLICT` | Resolve as decided. `AI` → apply `proposed_code`, adapting only names that changed. `BOTH` → keep both behaviours with no duplicate calls. |
 | `OPTIMIZED_IN_TARGET` | Keep target's structure and re-express the source behaviour inside it. |
 | `OPTIMIZED_IN_SOURCE` | Take source's version, then re-apply every target-only change on top. |
-| `NEAR_CHANGE` / auto-merged | Re-read the whole function; a textual merge can still be wrong logic. |
+| `NEAR_CHANGE` / auto-merged | Follow the item's decision when it has one: `TARGET` → keep target's lines for this hunk, `AI`/`BOTH` → apply `proposed_code`. Without a decision, re-read the whole function; a textual merge can still be wrong logic. |
+| `IB_METADATA` | Keep target's metadata lines (module name / tool version) for this hunk; take every other change in the file. |
+| Item with `counterpart_verdict: port` | Apply the item as decided **and** port the same business rule into the counterpart file named in `counterpart_note`. Record it in `final_path` notes. |
 | `RESTRUCTURED` | Port the hunk into `target_path`. If git brought back the old path, ask before `git rm`. |
 | `DELETED_IN_TARGET` | `SOURCE` → port to where the logic lives now. `TARGET` → `git rm` the resurrected file. |
 | `DELETED_IN_SOURCE` | `SOURCE` → delete only after `git grep` shows no remaining references. `TARGET` → keep. |
@@ -243,11 +290,16 @@ python3 "$SKILL_DIR/scripts/verify_coverage.py" ~/Downloads/merge-reports/<ID>/a
 Repeat until it passes, or until the developer has confirmed every remaining line.
 
 ### 2.5 Post-merge steps from the profile
-Run each `post_merge` command from `project_profile.py` (or `.merge-guard.json`) at the repo root. For AppCMS projects that is:
+Run the `post_merge` commands (from `project_profile.py` / `.merge-guard.json`) **through the runner**, which records exactly which files each command changed:
 ```bash
-bash setup_environment.sh motv stage
+python3 "$SKILL_DIR/scripts/run_post_merge.py" ~/Downloads/merge-reports/<ID>/analysis.json --tree <target_folder>
+# or explicitly: --cmd "cd AppCMS && bash setup_environment.sh motv stage"
 ```
-If a command fails, try to fix the cause from its output (missing file, path, permission); if you can't, show the error and ask. Afterwards, list the files it changed (`git status --short`) so the developer can decide whether they belong in the commit.
+- Environment scripts often rewrite tracked files (project file, Pods, plists, generated code) and may live in a sub-folder; ask for their arguments (client, environment) if the profile says so.
+- Exit 1 = a command failed: fix the cause from its output if you can; otherwise show it and ask.
+- Exit 2 = a command changed **merged files**: re-run `verify_coverage.py`, and ask whether those edits belong in the merge commit.
+- If the profile notes that `.merge-guard.json` empties a detected step (`"post_merge": []`), confirm with the developer that skipping it is intended.
+- Then run the generators for `GENERATED` items (`regenerate`), and lockfile regeneration.
 
 ### 2.6 Resolve packages, build every target, fix compilation
 **Never run builds in parallel or in the background.** Parallel `xcodebuild` runs into one DerivedData fail with `database is locked` / `has been modified since the module file was built`. Those are false failures that hide the real result.
@@ -257,6 +309,9 @@ If a command fails, try to fix the cause from its output (missing file, path, pe
 python3 "$SKILL_DIR/scripts/build_xcode.py" --repo <target_folder> --out ~/Downloads/merge-reports/<ID>
 # editor limits command time? call it once per scheme: … --scheme VLPlayerLib, then --scheme VLPlayerLib_tvOS, …
 ```
+- Every **application / app-extension target must be built** — the script finds them in the project and fails with `MISSING_SCHEME` when no listed scheme builds one (schemes that exist only in a user's `xcuserdata` don't exist on CI). Pass `--require-target` / `--scheme` or set `required_targets` in `.merge-guard.json`.
+- Packages are built **only at the revisions in `Package.resolved`** (branch-pinned packages would otherwise pull new remote commits mid-merge). Use `--allow-package-updates` only when the developer wants packages updated.
+
 **Other stacks:** run the profile's `build` commands one after another, in the foreground.
 
 Then:
@@ -272,6 +327,7 @@ Then:
    - After every fix, rebuild the affected schemes, and at the end rebuild **all** schemes once more.
 4. **Duplicate build files:** if the summary lists "Skipping duplicate build file", run `pbx_targets.py <pbxproj> --duplicates` on the merged project and with `--ref <target.ref> --repo <target>` on the target branch. Duplicates that appear only after the merge came from the merge: remove the extra entry. If they were already on target, just mention them.
 5. Re-run `verify_coverage.py`; build fixes must not remove merged code.
+6. **Lint and tests:** run the profile's `lint` on the merged files (CI and commit hooks reject violations) and its `test` commands for the modules the merge touched. Report failures with the first error; fix only what the merge caused.
 6. **Hand-over gate:** don't say the merge "compiles" or "is done" until the **last** sequential run shows every scheme `SUCCEEDED`. Put the per-scheme table in your reply. If something still fails or couldn't be built here, say so plainly, with the scheme and first error.
 7. If the toolchain isn't available here, give the exact commands, ask the developer to run them, and fix from the errors they paste.
 
@@ -281,7 +337,10 @@ Only after the hand-over gate in 2.6 has passed (or the developer has accepted t
 python3 "$SKILL_DIR/scripts/commit_message.py" ~/Downloads/merge-reports/<ID>/analysis.json --tree <target_folder> \
   --build "<scheme ✔/✘ list from build-summary.md>" --post-merge "<post-merge commands ✔>"
 ```
-This writes `COMMIT_MSG.txt`:
+This writes `COMMIT_MSG.txt`. **Exit 4 = no merge in progress** (`MERGE_HEAD` missing, e.g. after `git merge --quit`, a stash or a reset): a commit now would be a plain commit and git would forget the source branch was merged, so the next merge shows the same changes again. Don't hand over until it's fixed: restart the merge record (`git merge --no-commit -s ours <source.ref>` needs a clean index, so explain the options to the developer), or tell them to record it right after their commit with `git merge -s ours <source>`.
+After the developer commits, check `git merge-base --is-ancestor <source.head> HEAD`; if it fails, tell them the merge wasn't recorded.
+
+The file contains:
 - subject line;
 - merge summary: report ID, editor and session, who decided, coverage and build results;
 - **`developer -- file -- merged line numbers -- item/decision -- developer notes`**, grouped by developer;
@@ -292,10 +351,18 @@ This writes `COMMIT_MSG.txt`:
 - coverage result;
 - counts: decided by AI / by developer / auto-merged;
 - the AI decisions that dropped or rewrote source code, one line each with the evidence, so they can spot-check;
+- look-alike verdicts (`port` / `not-needed`) and any earlier doubts that were cleared, with the reason;
+- when items still need people: the top developer pairs from report.html's "Who needs to talk to whom" table (pair → blocking card IDs);
 - files changed by post-merge steps;
 - the report path.
 
 Then show the full commit message and the command they can run **themselves**: `git commit -F <report>/COMMIT_MSG.txt`. Edit the message if they ask. **Do not commit, continue the merge, or push — not even if asked to "finish it"; explain that this skill leaves commits and pushes to them.**
+
+After the developer commits, run:
+```bash
+python3 "$SKILL_DIR/scripts/verify_commit.py" ~/Downloads/merge-reports/<ID>/analysis.json --tree <target_folder>
+```
+It checks the source is now an ancestor (merge recorded), that a merge commit brought it in, and that the committed tree equals the hand-over (commit hooks or formatters didn't change merged files). After the PR lands, run it again with `--ref origin/<target_branch>`: it lists merged files that changed afterwards.
 
 Then:
 - Write `merge-result.md` in the report folder: verification summary, build summary, items handled differently from the report and why.

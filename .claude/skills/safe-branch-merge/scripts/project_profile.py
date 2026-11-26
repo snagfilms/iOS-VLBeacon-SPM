@@ -33,7 +33,12 @@ EXAMPLE = {
     "protect": ["**/Package.resolved", "Config/*.xcconfig"],
     "post_merge": ["bash setup_environment.sh motv stage"],
     "build": ["xcodebuild -workspace App.xcworkspace -scheme App -destination 'generic/platform=iOS Simulator' build CODE_SIGNING_ALLOWED=NO"],
-    "regenerate": ["Podfile.lock: pod install"],
+    "regenerate": ["Podfile.lock: pod install", "cd AppCMS && ./apollo-ios-cli generate --path apollo-codegen-config.json"],
+    "generated": ["AppCMS/GraphQLGeneratedFiles/**"],      # generated output: kept as target, regenerated after merge
+    "parallel_modules": ["AppCMS/ViewliftOne/"],           # folders where target re-implemented legacy code (look-alikes)
+    "required_targets": ["AppCMS", "AppCMS_tvOS"],         # app/extension targets build_xcode.py must build
+    "lint": ["swiftlint lint --quiet --config AppCMS/.swiftlint.yml <merged files>"],
+    "test": ["xcodebuild test -workspace AppCMS/AppCMS.xcworkspace -scheme AppCMSTvTest -destination 'platform=tvOS Simulator,name=Apple TV'"],
     "notes": ["Package pins for VLPlayerLib must stay on branch Develop_Analytics"],
 }
 
@@ -52,7 +57,7 @@ def first(root, *pats):
 
 
 def detect(root):
-    prof = {"profiles": [], "protect": [], "post_merge": [], "build": [], "discover": [], "regenerate": [], "notes": [],
+    prof = {"profiles": [], "protect": [], "post_merge": [], "build": [], "discover": [], "regenerate": [], "notes": [], "lint": [], "test": [],
             "ask_developer": False, "mode": "auto", "confidence_threshold": 0.8, "merge_branch": "direct", "record_as_merge": True}
     add = lambda k, *v: prof[k].extend(x for x in v if x not in prof[k])
 
@@ -62,10 +67,20 @@ def detect(root):
         ws = None
 
     # --- AppCMS (ViewLift) ---------------------------------------------------------------
-    if os.path.exists(os.path.join(root, "setup_environment.sh")) and exists(root, "AppCMS.xcodeproj", "*/AppCMS.xcodeproj", "AppCMS.xcworkspace", "*/AppCMS.xcworkspace"):
-        add("profiles", "appcms")
-        add("post_merge", "bash setup_environment.sh motv stage")
-        add("notes", "AppCMS: run setup_environment.sh from the repo root after the merge; list the files it changed so the developer can decide whether they belong in the commit.",
+    setup = first(root, "setup_environment.sh", "*/setup_environment.sh")
+    if setup:
+        sdir = os.path.dirname(setup) or "."
+        cmd = f"cd '{sdir}' && bash setup_environment.sh" if sdir != "." else "bash setup_environment.sh"
+        if exists(root, "AppCMS.xcodeproj", "*/AppCMS.xcodeproj", "AppCMS.xcworkspace", "*/AppCMS.xcworkspace"):
+            add("profiles", "appcms")
+            add("post_merge", cmd + " motv stage")
+            add("notes", "AppCMS: setup_environment.sh takes <client> <env> (default here: motv stage) — confirm with the developer; it rewrites "
+                         "project.pbxproj / Pods / SiteConfig.plist, so run it through run_post_merge.py.")
+        else:
+            add("post_merge", cmd); prof["ask_developer"] = True
+            add("notes", f"Environment script {setup} found — ask the developer for its arguments before running it.")
+    if setup and exists(root, "AppCMS.xcodeproj", "*/AppCMS.xcodeproj", "AppCMS.xcworkspace", "*/AppCMS.xcworkspace"):
+        add("notes",
             "AppCMS: build both AppCMS (iOS) and AppCMS_tvOS plus extensions; respect #if os(iOS) / #if os(tvOS).",
             "AppCMS: branch-specific SPM pins are protected (see reference.md). Target Develop_ViewLiftOne keeps VLAnalytics, VLAuthentication, "
             "VLBeaconLib, VLNotificationServiceLib, VLPlayerLib on Develop_Analytics, VLStoreKit on Develop_StorekitV2, VisualEffectView on master.")
@@ -121,6 +136,19 @@ def detect(root):
     if exists(root, "pyproject.toml", "setup.py", "requirements.txt"):
         add("profiles", "python"); add("build", "python3 -m compileall -q .")
 
+    # --- lint / generated code / tests (any stack) ------------------------------------------
+    lint = first(root, ".swiftlint.yml", "*/.swiftlint.yml")
+    if lint:
+        add("lint", f"swiftlint lint --quiet --config '{lint}' <merged files>")
+    for f, how in ((first(root, "apollo-codegen-config.json", "*/apollo-codegen-config.json"), "apollo-ios-cli generate --path {f}"),
+                   (first(root, "swiftgen.yml", "*/swiftgen.yml"), "swiftgen config run --config {f}"),
+                   (first(root, ".sourcery.yml", "*/.sourcery.yml"), "sourcery --config {f}"),
+                   (first(root, "buf.gen.yaml", "*/buf.gen.yaml"), "buf generate")):
+        if f:
+            add("regenerate", "generated code: " + how.format(f=f) + "  (confirm the exact command with the developer)")
+    if os.path.exists(os.path.join(root, ".eslintrc.json")) or os.path.exists(os.path.join(root, ".eslintrc.js")):
+        add("lint", "npx eslint <merged files>")
+
     if not prof["build"]:
         prof["ask_developer"] = True
         add("notes", "No build system detected — ask the developer for the build/compile command (and offer to save it in .merge-guard.json).")
@@ -141,13 +169,16 @@ def main():
         except ValueError as e:
             sys.exit(f"{cfg_path} is not valid JSON ({e}) — fix it or remove it")
         prof["profiles"].insert(0, f"config:{cfg.get('profile', '.merge-guard.json')}")
-        for k in ("post_merge", "build", "discover"):      # team config replaces detected commands
+        for k in ("post_merge", "build", "discover", "lint", "test"):      # team config replaces detected commands
             if k in cfg:
+                if not cfg[k] and prof[k]:
+                    prof["notes"].append(f".merge-guard.json sets \"{k}\": [] but the repo suggests {prof[k]} — confirm with the developer "
+                                         "that skipping it is intended.")
                 prof[k] = list(cfg[k])
         for k in ("protect", "regenerate", "notes"):         # lists are combined
             if k in cfg:
                 prof[k] = list(cfg[k]) + [x for x in prof[k] if x not in cfg[k]]
-        for k in ("mode", "confidence_threshold", "merge_branch", "record_as_merge"):
+        for k in ("mode", "confidence_threshold", "merge_branch", "record_as_merge", "generated", "parallel_modules", "required_targets"):
             if k in cfg:
                 prof[k] = cfg[k]
         prof["ask_developer"] = not prof["build"]

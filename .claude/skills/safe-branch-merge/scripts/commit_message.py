@@ -14,7 +14,7 @@ Usage:
                     [--subject "custom subject"]
 Writes <report_folder>/COMMIT_MSG.txt and prints it.
 """
-import argparse, json, os, re
+import argparse, json, os, re, sys
 from collections import defaultdict, OrderedDict
 
 
@@ -72,7 +72,7 @@ def main():
     for it in d["items"]:
         cat = it.get("ai_category") or it["category"]
         dec = it.get("decision")
-        if cat in ("ALREADY_PRESENT", "COSMETIC"):
+        if cat in ("ALREADY_PRESENT", "COSMETIC", "IB_METADATA"):
             continue
         devs = it.get("source_authors") or [{"name": "unknown", "email": "", "date": ""}]
         note = it.get("decision_notes") or ""
@@ -170,6 +170,27 @@ def main():
     print(msg)
     print(f"written: {out}")
     print(f"Developer commits it (this skill never does):  git -C \"{root}\" commit -F \"{out}\"")
+    # ---- hand-over snapshot: the exact staged tree; verify_commit.py compares the developer's commit with it
+    import subprocess
+    tree = subprocess.run(["git", "-C", root, "write-tree"], capture_output=True, text=True).stdout.strip()
+    if tree:
+        d["handover"] = {"tree": tree, "head": subprocess.run(["git", "-C", root, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip(),
+                         "unstaged": subprocess.run(["git", "-C", root, "diff", "--name-only"], capture_output=True, text=True).stdout.split()}
+        json.dump(d, open(a.analysis, "w"), indent=1)
+        if d["handover"]["unstaged"]:
+            print("NOTE: unstaged changes are NOT in the hand-over (git add them or tell the developer): " + ", ".join(d["handover"]["unstaged"][:10]))
+    # ---- merge record: without MERGE_HEAD the commit is a plain commit and git forgets the source branch was merged
+    gd = subprocess.run(["git", "-C", root, "rev-parse", "--git-dir"], capture_output=True, text=True).stdout.strip()
+    gd = gd if os.path.isabs(gd) else os.path.join(root, gd)
+    src = d["source"].get("head") or d["source"].get("ref")
+    want_record = (d.get("structure") or {}).get("strategy", "git-merge") == "git-merge" or d.get("record_as_merge", True)
+    merged = subprocess.run(["git", "-C", root, "merge-base", "--is-ancestor", src, "HEAD"]).returncode == 0
+    if want_record and not merged and not os.path.exists(os.path.join(gd, "MERGE_HEAD")):
+        print("\nWARNING: no merge is in progress (MERGE_HEAD missing), so this commit would NOT record "
+              f"{d['source']['branch']} as merged. The next merge would show the same changes again.\n"
+              "Fix before committing: do not commit yet — tell the developer, or (after their commit) record it with\n"
+              f"  git -C \"{root}\" merge -s ours {src[:12]} -m \"Record merge of {d['source']['branch']} (changes already ported)\"")
+        sys.exit(4)
 
 
 if __name__ == "__main__":

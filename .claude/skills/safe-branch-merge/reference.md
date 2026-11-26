@@ -4,15 +4,17 @@
 ```
 ~/Downloads/merge-reports/<REPORT_ID>/
   analysis.json            single source of truth (items, AI fields, decisions, status)
-  report.html              discussion page for developers (Export decisions button)
+  report.html              discussion page for developers: decisions, review tracker, ready-to-merge gate,
+                           developer filter, multi-file import, Export decisions (see "Developer review page")
   report.md                same content; tick [x] boxes by hand if preferred
-  decisions-<ID>.json      exported from report.html (developers save it here)
+  decisions-<ID>.json      exported from report.html, or its Chrome/Edge auto-save file (developers save it here;
+                           several developers' files may sit side by side, e.g. decisions-<ID> (Shivam).json)
   verification.md / .json  written by verify_coverage.py in phase 2
   build-summary.md / .json per-scheme results from build_xcode.py (+ build-logs/<scheme>.log)
   COMMIT_MSG.txt           commit message + description for the developer (git commit -F …)
   merge-result.md          written at the end of phase 2
 ```
-`status` in analysis.json: `AWAITING_DECISIONS` → `NEEDS_DEVELOPER` / `AUTO_DECIDED` (auto_decide.py) or `DECISIONS_PARTIAL` / `DECISIONS_RECEIVED` (parse_decisions.py) → `MERGED_UNCOMMITTED`.
+`status` in analysis.json: `AWAITING_DECISIONS` → `AI_RECHECK` / `NEEDS_DEVELOPER` / `AUTO_DECIDED` (auto_decide.py) or `DECISIONS_PARTIAL` / `DECISIONS_RECEIVED` (parse_decisions.py) → `MERGED_UNCOMMITTED`.
 The skill never commits or pushes; after the developer commits, the status can be left as is.
 
 ## Autonomous mode (default) and escalation
@@ -23,10 +25,58 @@ The skill never commits or pushes; after the developer commits, the status can b
 | `ai_confidence` | 0.9+ proven by code or history · 0.8–0.9 strong reading · < 0.8 escalates (threshold: `.merge-guard.json → confidence_threshold`) |
 | `ai_evidence` | concrete proof; **required** when the choice drops source code/behaviour |
 | `escalate`, `escalate_reason` | business choice the code can't settle |
-| `check_verdict`, `check_note` | independent second review (`agree` / `disagree`); **required** for high severity |
+| `external_dependency` | the question for another team when correctness depends on a backend schema/behaviour or another repo — always escalated |
+| `check_verdict`, `check_note`, `check_by` | independent second review (`agree` / `disagree`), what it verified, who did it; **required** for high severity and for choices that drop or rewrite source code; boilerplate notes count as missing (→ RECHECK) |
+| `depends_on` | ids this decision relies on (ids mentioned in the AI text are added automatically); follows an escalated dependency |
+| `counterparts` | set by classify_items.py: look-alike files in parallel modules (`path`, `uses`, `missing` identifiers) |
+| `counterpart_verdict`, `counterpart_note` | `port` / `not-needed` + where / why — required when `counterparts` is set (→ RECHECK) |
+| `change_reason` | required when a review clears an earlier doubt (escalated / CUSTOM / below threshold) |
+| `ai_history` | every version of the AI fields (apply_review.py, or "edited directly" detected by auto_decide.py) |
+| `recheck` | why the AI's own review is incomplete (shown under "AI re-check pending") |
+| `doubt_cleared` | the earlier doubtful review that a later review cleared (shown as a risk on the card) |
 Result per item: `decision` + `decided_by: "ai"`, or `escalated: true` + `escalation_reasons` (shown under "Needs you").
-Hard escalation rules (no confidence overrides them): missing review · `escalate` · low confidence · check disagrees or is missing on high severity · drops source code without evidence · source values into a protected file · AI/BOTH without `proposed_code` · CUSTOM.
+Scope: every needs-decision item **and** every reviewed Review item (a recommendation other than SOURCE becomes the decision the merge follows).
+RECHECK (exit 3, the agent's own work): weak/boilerplate independent check on high-severity / code-dropping / rewriting choices; look-alike without verdict.
+Hard escalation rules (no confidence overrides them): earlier doubt cleared without change_reason or by a self-check only · depends on an escalated item · missing review · `escalate` · low confidence · check disagrees or is missing on high severity · drops source code without evidence · source values into a protected file · AI/BOTH without `proposed_code` · CUSTOM.
 Developer answers/overrides: `decided_by: "developer"`. `parse_decisions.py` marks any exported choice that differs from the AI decision as a developer override.
+Several decisions files: a combined export (has `merged_from`) replaces the individual files of the reviewers it lists; the remaining files are merged per item. Leaving the pre-selected option untouched is not a vote (unless "Mark reviewed" was ticked), so it never outvotes or conflicts with a real choice. Different real choices for one item, or an exported `status: "CONFLICT"`, → `CONFLICT` (exit 2, ask). `reviewed_by` is copied onto the item.
+
+## Developer review page (report.html)
+Every card with decision controls (Needs you, Decided by AI, Decided by developer, Review) tracks its review state:
+| State | Meaning |
+|---|---|
+| **Reviewed — selected** | the option differs from the pre-selected one (the AI decision) |
+| **Reviewed — commented** | the developer wrote their own note (pre-filled AI notes don't count) |
+| **Reviewed — confirmed** | "Mark reviewed (I checked this point)" ticked — agrees with the pre-selected option |
+| **Reviewed — by <name>** | an imported developer file marks it reviewed |
+| **Pending review** | none of the above. A pre-selected AI option alone is **not** a developer review |
+| **Reviewers disagree** | imported files picked different options; settled only when someone picks the final option here **and** ticks "Mark reviewed" |
+
+Top bar and Tracker panel: reviewed / pending counts (overall, per section, per developer), status filter, **Developer** filter (authors of the exact lines on either side), **Next pending**, **Pending list** (copyable text grouped by developer for Slack/Jira), **Import decisions** (several files at once, each kept as a separate reviewer), save status.
+
+**Who needs to talk to whom** (Tracker panel, open by default). One row per developer pair: the author of the incoming (source) lines ↔ the author of the conflicting current (target) lines on the same cards, with emails, the open cards as links (red = reviewers disagree), **Decisions pending** (cards with no option chosen yet, or where reviewers disagree — `0 ✓` when all decided), **Blocking** (Needs you / AI re-check) and **Not reviewed / total** (also counts cards with an AI decision nobody checked). Rows are sorted by blocking, then decisions pending, then not-reviewed cards; updates live as cards are reviewed, and fully reviewed pairs fade out. "(author not found)" = that side only deleted lines and git can't tell who — the owner of that screen joins.
+- **Copy as text** — Slack-ready message (`*bold*` names, decisions pending, `:red_circle:` for blocking, not-reviewed count, card IDs per pair, report ID and readiness, "shared by <Decided by>"). Falls back to a select-and-copy box when the clipboard is blocked.
+- **Copy as image** — PNG of the table (2× resolution) on the clipboard for ⌘V in Slack; downloads `merge-review-pairs.png` when the clipboard is not available. Drawn on a canvas inside the page — no external library, works offline from `file://`.
+- The **Pending list** button also ends with a "Meet to resolve together" section (pair → card IDs).
+Both copies are a snapshot of the current review state; copy again after cards are reviewed.
+
+**Ready-to-merge gate** (chip + panel). Blockers: a "Needs you" card with no option · `CUSTOM` without a note · reviewers disagree · an "AI re-check pending" card nobody handled · a card whose `depends_on` card was changed here and that wasn't reviewed again.
+
+**Risk chips and Risk filter** on every card: low confidence · drops source code · weak second check · earlier doubt cleared · look-alike in parallel module · depends on other cards · AI re-check pending. Cards also show the **AI decision history** (every version, with the reason for changes), **Depends on** links, and the **look-alike** box with its verdict. Each item appears once: the Auto-applied list holds only items without a card. Unreviewed Decided-by-AI / Review cards are a warning only.
+
+**Persistence.** Every change is saved in browser storage at once and restored on reopen (same browser). In Chrome/Edge, **Auto-save to file…** also writes every change to a JSON file (suggest `decisions-<ID>.json` in the report folder) and reads it back on open, whichever copy is newer wins, so progress survives clearing browser data; if the browser asks again for permission, a **Reconnect save file** button appears. Safari/Firefox: use Export as backup; Import restores it (an auto-save file asks "restore as my progress" vs "add as another reviewer").
+
+**Exported / auto-saved JSON** (what `parse_decisions.py` reads):
+```
+{ report_id, exported_at, decided_by, merged_from: [reviewer names imported into this file], readiness: "READY…" | "BLOCKED (n)",
+  decisions: { "M-0001": { choice, notes, status: REVIEWED|PENDING|CONFLICT, reviewed_by: [...],
+                           reviewer_choices: {name: choice}, reviewed: true } },
+  autosave: true, local: {...}   // auto-save file only: the browser state used to restore progress
+}
+```
+`choice` is this browser's pick, else the option every imported reviewer agreed on. Notes from other reviewers are appended as `[name] note`.
+
+`.merge-guard.json` → `"parallel_modules": ["AppCMS/ViewliftOne/"]` names the folders where target re-implemented legacy code (used for look-alikes; detected when absent).
 
 `.merge-guard.json` mode keys: `"mode": "auto" | "review"`, `"confidence_threshold": 0.8`, `"merge_branch": "direct" | "new"`, `"record_as_merge": true`.
 
@@ -117,11 +167,13 @@ Any other editor: point it at `SKILL.md` and `safe-branch-merge.mdc` (plain Mark
 
 Signals the script adds (shown as ⚠ on cards): target/source rewrote a much larger region (optimisation hint), part of the added lines already exist (duplicate fix), target change N lines away, protected file, mapping method/confidence.
 
+Added by classify_items.py: `IB_METADATA` — XIB/storyboard hunk whose only change is the client module name (with `customModuleProvider="target"`) or the IB tool version; decided TARGET by rule, info severity.
+
 ## Decision options
 
 | Option | Code items | NEW_FILE | DELETED_IN_TARGET | DELETED_IN_SOURCE | PROTECTED / PROJECT_FILE |
 |---|---|---|---|---|---|
-| `SOURCE` | Take incoming | Add at suggested path | Port change into target | Delete in target too | Use source values / re-add source refs |
+| `SOURCE` | Replace with source code as-is (on refactored target code this undoes target's version — prefer `AI` = source behaviour inside target code) | Add at suggested path | Port change into target | Delete in target too | Use source values / re-add source refs |
 | `TARGET` | Keep current (source change intentionally dropped) | Don't add | Drop — removal intentional | Keep file | Keep target |
 | `BOTH` | Keep both behaviours, merged without duplicates | Add at another path (notes) | Restore file + change | Keep, apply notes | Merge values |
 | `AI` | Apply `proposed_code` | — | — | — | — |
@@ -259,17 +311,42 @@ decision, decision_notes
 Top level: report_id, generated_at, status, generator{tool, session_id, resume_hint}, source/target{branch, folder, repo_root, ref, head},
 same_checkout, mode (shared-history | unrelated-history), merge_base, analysis_base, base_note, protected_globs, summary, developers, commits[], files[], target_only_changes[], items[], decisions_meta.
 
+## Repository risks (risk_scan.py)
+| Code | Level | Meaning → what to do |
+|---|---|---|
+| `REVERT_REINTRODUCED` | block | target reverted a change after the base; source still carries it → item escalates; show the revert |
+| `SECRET` | block | source adds an API key / private key / token-looking string → escalates; owner decides |
+| `APP_SCHEMES` | block | app/extension targets without a shared scheme → build them explicitly; ask the team to share the scheme |
+| `GENERATED` | warn | generated code (Apollo/GraphQL, protobuf, R.swift, SwiftGen, Sourcery, `.merge-guard.json → generated`) → keep target, regenerate |
+| `BUILD_SETTINGS` | warn | minimum OS / Swift / SDK differ between base, source, target → check source APIs against target's minimum |
+| `DEPENDENCIES` | warn | branch-pinned packages; packages source added/removed; SPM + podspec changed on one side only |
+| `CASE` | warn | paths differing only in case; case-only renames |
+| `CORE_DATA` | warn | an existing model version edited → needs a new version + mapping |
+| `UTF16_STRINGS` | warn | UTF-16 .strings → merge by key |
+| `MERGE_BASES` | warn | criss-cross history → consider `--since` |
+| `TOOLING` / `JUNK` | info | AI-agent/editor config, per-user/OS files → kept apart from product decisions (JUNK kept as target) |
+| `DUPLICATE_SUBJECTS` | info | same commit subject on both sides (squash / cherry-pick) |
+"Needs action" (block) risks must be ticked "acknowledged / handled" in report.html before the Ready-to-merge chip turns green.
+
+`.merge-guard.json` keys for any project: `protect`, `post_merge`, `build`, `discover`, `regenerate`, `generated`, `parallel_modules`, `required_targets`, `lint`, `test`, `mode`, `confidence_threshold`, `merge_branch`, `record_as_merge` (template: `project_profile.py <repo> --example-config`).
+
 ## Script exit codes
 | Script | 0 | other |
 |---|---|---|
 | preflight.sh | always 0 — read `VERDICT:` | — |
 | collect_changes.py | ok | 1 = error / unrelated history without `--since` |
 | render_report.py | ok | 3 = AI fields missing on decision items (report still written) |
-| parse_decisions.py | all decided | 2 = missing / ambiguous / CUSTOM without notes |
+| parse_decisions.py | all decided | 2 = missing / ambiguous / CUSTOM without notes / CONFLICT (reviewers disagree) |
 | verify_coverage.py | PASS | 1 = MISSING lines or conflict markers |
 | project_profile.py | ok (read `ask_developer`) | — |
 | propose_file_map.py | ok — writes file-map.draft.json | — |
-| auto_decide.py | everything decided → continue | 2 = escalations listed → ask the developer once |
+| auto_decide.py | everything decided → continue | 3 = RECHECK (fix the AI review, re-run) · 2 = escalations listed → ask the developer once |
+| classify_items.py | ok — IB metadata + look-alikes written | — |
+| apply_review.py | ok — review results merged with history | — |
 | build_xcode.py | every scheme SUCCEEDED | 1 = a scheme failed (`CODE_FAIL` / `ENV_FAIL` / `FAILED`) or package resolution failed |
-| commit_message.py | ok — never commits | — |
+| commit_message.py | ok — never commits (saves the hand-over tree) | 4 = no merge in progress: the commit would not record the source branch as merged |
+| risk_scan.py | ok — repo_risks written | — |
+| run_post_merge.py | commands ran, no merged file touched | 1 = a command failed · 2 = a command changed merged files |
+| verify_commit.py | merge recorded and content = hand-over | 1 = merge not recorded · 2 = content differs from hand-over / changed after landing |
+| build_xcode.py (new) | — | 1 also when an app/extension target has no scheme (`MISSING_SCHEME`) |
 | add_to_targets.rb | ok | 2 = target name not found |

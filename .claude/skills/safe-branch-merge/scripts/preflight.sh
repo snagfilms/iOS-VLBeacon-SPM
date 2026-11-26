@@ -56,11 +56,16 @@ check_folder() {
   all=$(git -C "$dir" status --porcelain=v1 --untracked-files=all 2>/dev/null)
   # files the safe-branch-merge installer created are not "local work": never block on them,
   # never ask to stash or commit them (the developer commits them whenever they like)
-  local OWN_RE='^\?\? (\.claude/skills/safe-branch-merge/|\.ai-skills/safe-branch-merge/|\.cursor/rules/safe-branch-merge\.mdc|\.windsurf/rules/safe-branch-merge\.md|\.github/instructions/safe-branch-merge\.instructions\.md|\.merge-guard\.json|\.merge-guard-build/|AGENTS\.md$|CLAUDE\.md$)'
+  local OWN_RE='^(\?\?| M|M |MM|A ) (\.claude/skills/safe-branch-merge/|\.ai-skills/safe-branch-merge/|\.cursor/rules/safe-branch-merge\.mdc|\.windsurf/rules/safe-branch-merge\.md|\.github/instructions/safe-branch-merge\.instructions\.md|\.merge-guard\.json|\.merge-guard-build/|AGENTS\.md$|CLAUDE\.md$)'
   own=$(printf '%s\n' "$all" | grep -E "$OWN_RE" || true)
   dirty=$(printf '%s\n' "$all" | grep -vE "$OWN_RE" | sed '/^$/d' || true)
+  # per-user / OS files (Xcode UI state, .DS_Store) are not work: report, never block on them
+  local JUNK_RE='(/xcuserdata/|\.xcuserstate$|(^|/)\.DS_Store$)'
+  local junk; junk=$(printf '%s\n' "$dirty" | grep -E "$JUNK_RE" || true)
+  [ -n "$junk" ] && echo "INFO  $label has $(printf '%s\n' "$junk" | wc -l | tr -d ' ') changed per-user/OS file(s) (xcuserdata, .DS_Store) — not counted as local work"
+  dirty=$(printf '%s\n' "$dirty" | grep -vE "$JUNK_RE" | sed '/^$/d' || true)
   if [ -n "$own" ]; then
-    echo "INFO  $label has $(printf '%s\n' "$own" | wc -l | tr -d ' ') untracked file(s) installed by safe-branch-merge — ignored (not stashed, not committed; git merge leaves untracked files alone)"
+    echo "INFO  $label has $(printf '%s\n' "$own" | wc -l | tr -d ' ') untracked file(s) installed by safe-branch-merge — ignored. If they are tracked and the source branch also changes them, git may refuse the merge — then ask the developer to commit the skill update first."
   fi
   local inst; inst=$(printf '%s\n' "$all" | grep -E '^ M (AGENTS\.md|CLAUDE\.md)$' || true)
   if [ -n "$inst" ] && [ "$(printf '%s\n' "$all" | sed '/^$/d' | grep -vE "$OWN_RE" | grep -vE '^ M (AGENTS\.md|CLAUDE\.md)$' | wc -l | tr -d ' ')" = "0" ]; then
@@ -99,11 +104,10 @@ check_folder() {
     warn "$label has no 'origin' remote"
   fi
 
-  [ -f "$top/.gitmodules" ] && warn "$label uses submodules — submodule pointer changes must be reviewed by hand"
+  [ -n "$(git -C "$top" config -f "$top/.gitmodules" --get-regexp 'submodule\..*\.path' 2>/dev/null)" ] && warn "$label uses submodules — submodule pointer changes must be reviewed by hand"
   grep -qs "filter=lfs" "$top/.gitattributes" && warn "$label uses Git LFS — make sure 'git lfs pull' was run"
-  if [ -f "$top/setup_environment.sh" ] || ls "$top"/*/AppCMS.xcodeproj >/dev/null 2>&1 || [ -d "$top/AppCMS.xcodeproj" ]; then
-    echo "INFO  $label looks like an AppCMS project (setup_environment.sh / AppCMS.xcodeproj found)"
-  fi
+  local se; se=$(cd "$top" && ls setup_environment.sh */setup_environment.sh 2>/dev/null | head -1)
+  [ -n "$se" ] && echo "INFO  $label has an environment setup script: $se — it may rewrite tracked files; run it via run_post_merge.py"
 }
 
 check_folder "SOURCE" "$SRC_DIR" "$SRC_BR" source
@@ -128,6 +132,50 @@ if git -C "$SRC_DIR" rev-parse >/dev/null 2>&1 && git -C "$TGT_DIR" rev-parse >/
     [ "$S_URL" != "$T_URL" ] && warn "origin URLs differ: source=$S_URL target=$T_URL"
   fi
 fi
+
+echo "== Repository conditions"
+SKILL_HOME="$(cd "$(dirname "$0")/.." && pwd -P)"
+skill_hash() { (cd "$1" 2>/dev/null && find SKILL.md safe-branch-merge.mdc reference.md scripts -type f ! -path '*__pycache__*' ! -name '.DS_Store' 2>/dev/null | LC_ALL=C sort | xargs cat 2>/dev/null | shasum | cut -c1-12); }
+RUN_HASH=$(skill_hash "$SKILL_HOME")
+printf '%s\n' "$(git -C "$SRC_DIR" rev-parse --show-toplevel 2>/dev/null)" "$(git -C "$TGT_DIR" rev-parse --show-toplevel 2>/dev/null)" | sort -u | while IFS= read -r top; do
+  [ -n "$top" ] || continue
+  for cp in "$top/.claude/skills/safe-branch-merge" "$top/.ai-skills/safe-branch-merge"; do
+    [ -f "$cp/SKILL.md" ] || continue
+    [ "$(cd "$cp" && pwd -P)" = "$SKILL_HOME" ] && continue
+    if [ "$(skill_hash "$cp")" != "$RUN_HASH" ]; then
+      warn "installed skill copy differs from the one running ($SKILL_HOME): $cp — other agents/editors in this repo use the OLD rules. Tell the developer to re-run install.sh (and commit it if the team shares it)."
+    fi
+  done
+done
+
+# worktrees: the target branch checked out somewhere else blocks a checkout; other worktrees can hold work
+WT=$(git -C "$TGT_DIR" worktree list --porcelain 2>/dev/null)
+T_TOP_P=$(cd "$(git -C "$TGT_DIR" rev-parse --show-toplevel)" && pwd -P)
+OTHER=$(printf '%s\n' "$WT" | awk -v me="$T_TOP_P" '/^worktree /{w=substr($0,10)} /^branch /{b=substr($0,8); if (w!=me) print w" ("b")"}')
+if [ -n "$OTHER" ]; then
+  warn "TARGET repo has other worktrees (uncommitted work there is not part of this merge): $(printf '%s\n' "$OTHER" | paste -sd ';' -)"
+  printf '%s\n' "$OTHER" | grep -q "(refs/heads/$TGT_BR)" && block "branch '$TGT_BR' is also checked out in another worktree — merge there or ask the developer"
+fi
+
+# commit hooks: they run on the developer's commit and can block it or rewrite staged files
+HP=$(git -C "$TGT_DIR" config core.hooksPath 2>/dev/null)
+GD=$(git -C "$TGT_DIR" rev-parse --git-common-dir); case "$GD" in /*) ;; *) GD="$TGT_DIR/$GD";; esac
+HOOKS=$( { [ -n "$HP" ] && ls "$( [ "${HP#/}" != "$HP" ] && echo "$HP" || echo "$T_TOP_P/$HP")" 2>/dev/null | sed "s#^#$HP/#"; ls "$GD/hooks" 2>/dev/null | grep -v '\.sample$' | sed 's#^#.git/hooks/#'; for f in .husky .githooks githooks lefthook.yml .pre-commit-config.yaml; do [ -e "$T_TOP_P/$f" ] && echo "$f"; done; } | sort -u | tr '\n' ' ')
+if [ -n "$(echo $HOOKS)" ]; then
+  warn "commit/push hooks found: $HOOKS— they run on the developer's commit and may block it or change staged files. After the commit run verify_commit.py (it compares the committed tree with the hand-over)."
+else ok "no commit hooks"; fi
+
+# the repository's own rules for AI agents / contributors: read them before deciding anything
+RULES=$(cd "$T_TOP_P" && ls -d CLAUDE.md AGENTS.md CONTRIBUTING.md .github/copilot-instructions.md .cursor/rules/*.mdc .windsurf/rules/*.md .cursorrules .claude/skills/*/SKILL.md 2>/dev/null | grep -v 'safe-branch-merge' | tr '\n' ' ')
+[ -n "$RULES" ] && echo "RULES $RULES — read them before reviewing: they may forbid patterns (e.g. which module may import what) or define their own merge process."
+
+# history shape
+NB=$(git -C "$TGT_DIR" merge-base --all "refs/heads/$TGT_BR" "$(git -C "$SRC_DIR" rev-parse "refs/heads/$SRC_BR" 2>/dev/null)" 2>/dev/null | wc -l | tr -d ' ')
+[ "${NB:-0}" -gt 1 ] && warn "$NB merge bases (criss-cross history) — git's base may hide changes; review with --since <last verified merge point>"
+
+# case-only path collisions (macOS/Windows file systems keep only one of them)
+CC=$(git -C "$TGT_DIR" ls-tree -r --name-only "refs/heads/$TGT_BR" 2>/dev/null | awk '{l=tolower($0); if (l in s) print s[l]" <> "$0; else s[l]=$0}' | head -5)
+[ -n "$CC" ] && warn "TARGET has paths that differ only in letter case (one file is missing on a case-insensitive disk): $(echo "$CC" | tr '\n' ';')"
 
 if [ $BLOCKS -eq 0 ]; then echo "VERDICT: READY"; else echo "VERDICT: NEEDS_ACTION ($BLOCKS blocking)"; fi
 exit 0
