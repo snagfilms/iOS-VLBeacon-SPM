@@ -9,6 +9,10 @@
   report.md                same content; tick [x] boxes by hand if preferred
   decisions-<ID>.json      exported from report.html, or its Chrome/Edge auto-save file (developers save it here;
                            several developers' files may sit side by side, e.g. decisions-<ID> (Shivam).json)
+  render-state.json        render_report.py: card fingerprints of this and the previous render ("new / changed since last render")
+  ../index.html            render_index.py (run by render_report.py): every report in the folder + hotspots across merges
+  quality.json             quality_scan.py: who calls each changed function, file risk scores, platform context, test hints, new SwiftLint warnings,
+                           dependency pin diff, modules the build logs could not resolve (read by render_report.py)
   verification.md / .json  written by verify_coverage.py in phase 2
   build-summary.md / .json per-scheme results from build_xcode.py (+ build-logs/<scheme>.log)
   COMMIT_MSG.txt           commit message + description for the developer (git commit -F …)
@@ -64,6 +68,73 @@ Both copies are a snapshot of the current review state; copy again after cards a
 
 **Risk chips and Risk filter** on every card: low confidence · drops source code · weak second check · earlier doubt cleared · look-alike in parallel module · depends on other cards · AI re-check pending. Cards also show the **AI decision history** (every version, with the reason for changes), **Depends on** links, and the **look-alike** box with its verdict. Each item appears once: the Auto-applied list holds only items without a card. Unreviewed Decided-by-AI / Review cards are a warning only.
 
+**Layout (read this first).**
+- **Top bar:** title, Ready chip, review count, **Search** (`/`), **Next pending**, **Filters ▾** (status, developer, risk, area, assigned; the button turns blue with a count when filters are active; *Clear filters*), your name, **Export decisions**, and **⋯** — a compact menu: *Save & share* (save status, auto-save to file, import, copy pending list), *View* toggles (Diff: side by side / inline · Base column: show / hide · Theme: auto / light / dark · Cards: expand / collapse all), *More* (print, keyboard shortcuts) and *Jump to* (only when the side contents list is hidden). Wide code scrolls inside its column; the page itself never scrolls sideways.
+- **Table of contents** on the left on wide screens (≥ 1560 px) with card counts and the current section highlighted; on smaller screens the same links are under ⋯ → Jump to.
+- **Start here** box at the top: one headline (red *Not ready to merge yet* / amber *Ready, with a few things to check* / green *Ready to merge*), up to seven facts (decisions, reviews, build from `build-summary.json`, verification from `verification.json`, new lint on merged lines, high-risk files, cards changed since you last opened), and **Your next step** with a *Go →* button: the first blocker → an item that lost lines after the merge → a failing build → the first pending card → a rewritten item to confirm → "export and commit".
+- Metadata, how-to and the folder structure are under **Report details & how to use this page**; tiles and the who-to-talk-to tables under **Numbers & people** (both closed by default). Quality, history and areas come after the cards.
+- **Cards are collapsed** to: ID, plain-language type, title, the **AI suggestion line** (option, % sure, second-check result, first sentence of the reason), the file, up to **3 status chips** (`+N` shows the rest) and the decision controls. **Show details** (or `o`) opens code, evidence, AI analysis, checklist and callers. Cards that still need a person start open; focusing a card (`j`/`k`, deep link, Go →) opens it. ⋯ → Expand all / Collapse all.
+- The **Result** column appears only when the AI wrote merged code (`proposed_code`); otherwise the card shows Base · Incoming · Current.
+- **Plain words:** options read *Use incoming change* · *Keep current code (drop incoming change)* · *Keep both* · *Use AI's merged version* · *Custom — describe in notes* (exports still use SOURCE / TARGET / BOTH / AI / CUSTOM). Category badges show a human label (*Both sides changed*, *Only incoming changed* …) with the code name in the tooltip. **?** marks explain Base, Incoming, Current, Result, confidence and the second check.
+- **Colours have one meaning each:** red = blocks the merge · amber = needs a look · green = done / fine · grey = information. Card edge: red = still needs a person, amber = decision card not yet reviewed, green = reviewed, grey = information. Verification chips: red *N incoming lines missing after merge*, amber *check rewritten lines* / *removed lines still present*.
+
+**Reviewer (mandatory, read-only).** Every decision, note, *Mark reviewed*, assignment, checklist tick and export carries the reviewer's name.
+- Opened with `report_server.py`, the name comes from `git config user.name` (repo setting, else global) and the email from `user.email`. It is shown read-only in the top bar (and the ⋯ menu on phones).
+- Opened as a file, or when git has no `user.name`, the page asks **Who is reviewing?** once, with a required full name and a confirmation, and stores it in this browser. After that it can't be edited on the page.
+- Until a reviewer is set, the page is read-only: choosing an option, writing notes, ticking, assigning or exporting reopens the prompt (*Just look around* closes it).
+- Exports record `decided_by`, `decided_by_email` (git only) and `decided_by_source` (`git config` / `entered in this browser`). A saved-progress file never overrides the reviewer.
+
+**Commit links.** Every commit id in the report opens that commit on the git host in a new tab (↗): author lines on cards, "ported from", *Who to talk to*, *Source commits*, commit ids inside AI analysis / recommendation / evidence / second-check notes / signals / repository risks / AI decision history, and commit ids in **Ask AI** answers. `report.md` gets Markdown links too.
+- The URL comes from the repo's `origin` remote (https, ssh or `git@host:` form): GitHub and GitHub Enterprise `…/commit/<sha>`, GitLab `…/-/commit/<sha>`, Bitbucket `…/commits/<sha>`, Azure DevOps `…/_git/<repo>/commit/<sha>`. Incoming commits use the source clone's remote, current-side commits the target clone's.
+- Short ids are expanded to the full sha. Only commits of this merge are linked, so random hex strings stay plain text.
+- A commit that no remote branch contains (`git branch -r --contains`) is **not** linked — it would 404 — and its tooltip says "not pushed to the remote yet". Without a remote, ids stay plain.
+- Self-hosted or unusual hosts: set `"commit_url": "https://git.example.com/team/repo/commit/{sha}"` in `.merge-guard.json`.
+
+**Phones and tablets.** The page adapts below 900 px (tablet) and 700 px (phone):
+- **Top bar** shrinks to two rows: title + Ready chip, then search, ▶ (next pending), Filters, Export and ⋯. Your name moves into the ⋯ menu on phones. Filters and ⋯ open as full-width sheets under the bar.
+- **Code** shows as tabs (Base · Incoming · Current · Result) instead of side-by-side columns; Incoming is selected first. Wider screens switch back to columns live.
+- **Decision options** are full-width tap targets; tables scroll sideways inside their box; long titles and paths wrap; inputs use 16 px text so iOS does not zoom.
+- **AI help:** the bubble becomes a round ✦ button, the panel fills the screen under the bar, and it hides while a menu is open. Keyboard-only items are hidden on touch screens; ? tooltips open on tap.
+- The left contents list and the card minimap are desktop-only.
+
+**Reviewing faster.**
+- **Four columns per card:** Base · Source · Target · **Result** — the result column previews what the file will contain for the option chosen right now (Source lines, Target lines, the AI proposal, both, or the Custom notes) and updates live. Code is syntax-highlighted in the browser (Swift / Obj-C / Kotlin keywords, strings, comments, `#if` directives, attributes).
+- **Why the AI chose this** panel above the AI analysis: confidence meter (green ≥ 90 %, amber ≥ 80 %, red below), independent-check verdict and who did it, the evidence split into bullets, and **evidence links** (`S L304`, `T L301`, `B L303`) that jump to the purple-marked code lines the evidence names (identifiers in backticks / camelCase, `File.swift:123` references).
+- **Feature areas** panel and **Area** filter: cards grouped by the owning folder (generic folders such as `Sources`, `Views`, `VLPlayer` are skipped), with pending / blocking / high-risk counts per area. The review batch a card came from (`review-queue/batch_*.results.json`) shows as a purple chip.
+- **Platform chips:** `tvOS file`, `#if os(tvOS)`, `#if not iOS`, `edits #if …` — computed from the real file at the source/target commit, not from the snippet. Risk filter: "platform-specific".
+- **Keyboard:** `j`/`k` next/previous card · `n` next pending · `s` `t` `b` `a` `c` choose Source/Target/Both/AI/Custom · `Enter` accept the ★ recommendation · `r` Mark reviewed · `e` notes (`Esc` leaves) · `l` copy link · `g` first evidence line · `d` dark mode · `?` help. Keys are ignored while typing.
+
+**Quality & risk** section (needs `quality.json`; without it the section says how to run the scan).
+- **File risk** 0–100 = churn on target in the last 180 days (20) + distinct authors (15) + no test calls it (20; "type only" 12) + sensitive area (20 — DRM/payments/auth high; SSAI/analytics/ads/subtitles/cast/network medium) + highest item severity (15) + number of items (10). ≥ 60 HIGH, ≥ 35 MEDIUM. Every card shows `File risk N`.
+- **SwiftLint — new after the merge:** each changed Swift file is linted in the merged tree and at target HEAD (repo `.swiftlint.yml` if present); only warnings that did not exist before are listed, and those on merged lines are linked to their card (`N new lint on merged lines` chip, Risk filter "new lint on merged lines").
+- **Unused code (Periphery):** only with `quality_scan.py --periphery`.
+- **Test impact:** test files that reference the changed function (strong) or only its type (weak). Coverage % is not measured.
+- **Dependencies:** SwiftPM / CocoaPods / Carthage pins at base · source · target · merged tree, with "both changed — differ" and "merged tree has neither side" highlighted, plus modules that `build-logs/*.log` could not resolve.
+- Risk filter adds: high-risk file · no test calls it · new lint on merged lines · platform-specific.
+
+**Polish.**
+- **Deep links:** `report.html#M-0005` (or `#M-0005-source-L201` for an evidence line) opens the section, scrolls the card below the sticky bar and flashes it. Click a card ID (or press `l`) to copy its link.
+- **Progress bar** under the top bar (reviewed / all) and a **minimap** on the right edge: one tick per decision card (green reviewed, amber pending, red disagree, red outline = blocking, faded = filtered out); click to jump.
+- **Dark mode:** ◐ button cycles Auto (follows the OS) / Light / Dark; remembered per browser.
+- **Print / PDF:** opens every section while printing, hides the result column, minimap and unchosen options, keeps cards on one page where possible, starts each section on a new page and stamps report ID, print time and readiness at the top.
+
+**Across merges.**
+- **History / hotspots** section: files of this merge that needed a person in earlier reports of the same repository (sibling folders in `~/Downloads/merge-reports`, matched by the target repo folder name). Cards show `⟲ needed a person in N earlier merges`.
+- **Changed since last render** (shared): `render-state.json` keeps each card's fingerprint (code, category, AI recommendation, decision). Re-rendering the same data keeps the earlier comparison. Cards show `new since last render` / `changed since last render`.
+- **Changed since you last opened** (per browser): the first open records what you saw; later opens tag cards that differ (`● changed since you last opened`, blue edge) with a banner: **Show only these** / **Mark all seen**. Focusing a card or changing its decision marks it seen.
+- **All reports** (`../index.html`, link in the top bar): every report with date, repository, branches, status, open decisions, reviewers, verification, build, high-risk files, plus hotspots across reports. `render_index.py [folder]` rebuilds it on its own.
+
+**Review aids.**
+- **Who calls this:** per card, the call sites in target of the changed function(s) (`quality_scan.py`; declarations and comments excluded; first 25 shown). Protocol / selector / closure calls may be missed — the card says so when none are found.
+- **Behaviour checklist:** per card, checks a tester can tick on a device: business rules from the AI recommendation ("Business rule: …"), both outcomes of every changed `if` / `guard` condition, the flows that reach the changed function, the platform (tvOS / iOS), and "dropped source behaviour really not needed" for TARGET choices. Ticks are kept in the browser, in the auto-save file and in Export (`qa`).
+- **QA test plan** section: all checklists grouped by feature area with progress; **Copy as Markdown** / **Download .md** (`qa-test-plan-<ID>.md`) for a tester or a ticket.
+- **Commit message preview** section: follows the current choices and notes live (developer → file → item → decision; "Not merged" for TARGET; "STILL UNDECIDED" for open blocking cards). The committed file is still written by `commit_message.py`, which adds merged line numbers and build results.
+
+**Small tools.**
+- **Search** (`/`): every word must appear in the card (ID, file, function, author, code); also filters auto-applied cards; shows the match count.
+- **Diff: 3-way / inline** (`i`): inline shows Base → Source and Base → Target as unified diffs (LCS on the snippet lines) above the Result column. **Base: shown / hidden** drops the Base column in 3-way mode. Remembered per browser.
+- **Assign me** (`m`, or the button in the card header) puts the "Decided by" name on the card; **Assigned** filter: me / someone / unassigned. Assignments travel in Export (`assignments`) and are shown from imported files.
+
 **Persistence.** Every change is saved in browser storage at once and restored on reopen (same browser). In Chrome/Edge, **Auto-save to file…** also writes every change to a JSON file (suggest `decisions-<ID>.json` in the report folder) and reads it back on open, whichever copy is newer wins, so progress survives clearing browser data; if the browser asks again for permission, a **Reconnect save file** button appears. Safari/Firefox: use Export as backup; Import restores it (an auto-save file asks "restore as my progress" vs "add as another reviewer").
 
 **Exported / auto-saved JSON** (what `parse_decisions.py` reads):
@@ -78,7 +149,20 @@ Both copies are a snapshot of the current review state; copy again after cards a
 
 `.merge-guard.json` → `"parallel_modules": ["AppCMS/ViewliftOne/"]` names the folders where target re-implemented legacy code (used for look-alikes; detected when absent).
 
-`.merge-guard.json` mode keys: `"mode": "auto" | "review"`, `"confidence_threshold": 0.8`, `"merge_branch": "direct" | "new"`, `"record_as_merge": true`.
+`.merge-guard.json` mode keys: `"mode": "auto" | "review"`, `"confidence_threshold": 0.8`, `"merge_branch": "direct" | "new"`, `"record_as_merge": true`, `"ai_help": {"enabled": true, "model": "auto", "timeout_seconds": 240}` (see "AI help in the report"), `"commit_url": "https://host/team/repo/commit/{sha}"` (only when the commit link can't be derived from `origin`).
+
+## AI help in the report (Cursor agent)
+`scripts/report_server.py` opens a report with an **✦ Ask AI** bubble that answers questions about any card using the developer's own Cursor agent CLI.
+```bash
+cursor-agent login                                    # once; check with: cursor-agent status
+python3 "$SKILL_DIR/scripts/report_server.py" ~/Downloads/merge-reports/<ID> --open      # [--port 8787] [--model <name>] [--no-ai]
+```
+- **Shown only when it works:** the page asks the helper for `cursor-agent status`; the bubble, the **✦ Ask AI** button on every card, the *Ask AI how to fix this* link in Start here and the `q` key appear only when the agent is installed **and** logged in. Opened as a file, without the helper, or logged out, the page looks like the plain report and ⋯ → **Turn on AI help…** explains why and shows the exact command. A one-time tip next to the bubble introduces the feature.
+- **Panel** (bottom right): pick *this card* or *whole report*; suggested questions depend on the card (missing line after merge, second check disagrees, AI merged version …); answers stream in; `path:line` references become **Open in Cursor** links (`cursor://file/…`); **Copy**, **Add to notes** (puts the answer into the card's notes; the developer still edits and chooses the option) and **Continue in terminal** (`cursor-agent --resume <chat>`). Each card keeps its own Cursor chat and history (this browser).
+- **What the agent gets:** the card's category, decision, AI analysis / recommendation / evidence, second check, verification result, platform, callers, new lint, file risk and the base / incoming / current / AI-merged snippets — or, for the whole report, the item list with decisions, verification and build results. It runs `cursor-agent -p --mode ask` (**read-only**: reads files, never edits or runs commands) with `--workspace <target repo>`; no `--force`, `--yolo` or `--approve-mcps`.
+- **Safety:** the helper listens on 127.0.0.1 only, checks Host and Origin, and every API call needs a random per-run token that is injected only into pages it serves — other web pages cannot use it. Questions use the developer's Cursor account and usage; card code goes to Cursor's servers as in normal Cursor use. Answers are advice: decisions and *Mark reviewed* stay with a person.
+- **Not possible:** typing into Cursor's in-editor chat panel (no public API). Use *Open in Cursor* for the file and *Continue in terminal* for the conversation.
+- **Settings** (`.merge-guard.json` in the target repo): `"ai_help": {"enabled": true, "model": "auto", "timeout_seconds": 240}` — `enabled: false` hides the feature for that repository.
 
 ## Commit message (COMMIT_MSG.txt)
 ```
@@ -173,7 +257,7 @@ Added by classify_items.py: `IB_METADATA` — XIB/storyboard hunk whose only cha
 
 | Option | Code items | NEW_FILE | DELETED_IN_TARGET | DELETED_IN_SOURCE | PROTECTED / PROJECT_FILE |
 |---|---|---|---|---|---|
-| `SOURCE` | Replace with source code as-is (on refactored target code this undoes target's version — prefer `AI` = source behaviour inside target code) | Add at suggested path | Port change into target | Delete in target too | Use source values / re-add source refs |
+| `SOURCE` | "Use incoming change" — replaces the current code (on refactored target code this undoes target's version — prefer `AI` = "Use AI's merged version", source behaviour inside target code) | Add at suggested path | Port change into target | Delete in target too | Use source values / re-add source refs |
 | `TARGET` | Keep current (source change intentionally dropped) | Don't add | Drop — removal intentional | Keep file | Keep target |
 | `BOTH` | Keep both behaviours, merged without duplicates | Add at another path (notes) | Restore file + change | Keep, apply notes | Merge values |
 | `AI` | Apply `proposed_code` | — | — | — | — |

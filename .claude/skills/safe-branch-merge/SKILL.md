@@ -203,8 +203,17 @@ Record `check_verdict` (`agree` / `disagree`), `check_by` (who checked: the sub-
 ### 1.4 Decide, render, continue
 ```bash
 python3 "$SKILL_DIR/scripts/auto_decide.py" ~/Downloads/merge-reports/<REPORT_ID>/analysis.json   # --threshold from .merge-guard.json (default 0.8)
+python3 "$SKILL_DIR/scripts/quality_scan.py" ~/Downloads/merge-reports/<REPORT_ID>/analysis.json   # read-only; ~seconds
 python3 "$SKILL_DIR/scripts/render_report.py" ~/Downloads/merge-reports/<REPORT_ID>/analysis.json
 ```
+- `quality_scan.py` writes `quality.json`: per-file risk score (churn, authors, tests, sensitive area, item severity), platform context per item (`#if os(tvOS)`, `*_tvOS` files), tests that call the changed function, **new** SwiftLint warnings (merged tree vs target HEAD), and the Package.resolved / Podfile.lock pin diff. `render_report.py` shows it in "Quality & risk" and as chips on every card. It never edits the repo. Missing tools (SwiftLint, Periphery) are reported as "not available", never guessed. `--periphery` adds an unused-code scan (builds the project; slow — only when asked).
+- `quality_scan.py` also lists **who calls** each changed function (call sites in target) — use it for checklist step 3 (callers), and say in `ai_analysis` when a change reaches many flows.
+- `render_report.py` also writes `render-state.json` (so cards that are new or changed since the previous render are tagged) and refreshes `~/Downloads/merge-reports/index.html` (all reports, with verification/build status and hotspots across merges). Mention a hotspot (a file that needed a person in earlier merges of the same repo) in your summary.
+- **Words for developers:** in questions and summaries use the option names the page shows — "Use incoming change" (`SOURCE`), "Keep current code" (`TARGET`), "Keep both" (`BOTH`), "Use AI's merged version" (`AI`), "Custom" (`CUSTOM`) — and say *incoming* / *current* for source / target branch. Keep the codes in files and commands.
+- **Reviewer name:** the page locks the reviewer to `git config user.name` when opened with `report_server.py`; otherwise it asks once and locks it. Tell developers to set `git config user.name "Full Name"` and open the report with the helper, so decisions are attributed correctly.
+- **AI help for developers:** tell them they can open the report with `python3 "$SKILL_DIR/scripts/report_server.py" ~/Downloads/merge-reports/<REPORT_ID> --open` (after `cursor-agent login` once) to get the **✦ Ask AI** bubble: the local Cursor agent explains any card in read-only mode. Never start the helper for them unasked, and never tell them an AI answer replaces their decision. Details: reference.md → "AI help in the report".
+- When you hand the report to developers, point them to the **Start here** box: it shows readiness, build and verification status and their next step. Re-render after `verify_coverage.py` and `build_xcode.py` so it is current.
+- Use it in your review: a high-risk file, "no tests", a platform branch, or a dependency pin that differs on both sides is a reason to read the code more carefully, not a decision by itself.
 - `auto_decide.py` sets `decision` + `decided_by: "ai"` on everything you proved — needs-decision **and** reviewed Review items — and lists:
   - **RECHECK (exit 3) — your work, not the developer's:** a missing or boilerplate independent check on a high-severity / code-dropping / rewriting choice, or a look-alike without `counterpart_verdict`. Fix them (apply_review.py) and re-run. If a separate check is truly impossible, escalate the item instead.
   - **Escalations (exit 2):** the hard rules, plus "an earlier doubt was cleared without change_reason" and "depends on an escalated item".
@@ -223,7 +232,7 @@ Runs straight after Phase 1 in autonomous mode, or on "Resume merge report <ID>"
    - A pre-selected AI option the developer never touched is **not** a developer decision; `reviewed_by` shows who actually reviewed each card.
    - A developer decision must be explicit for that item: a name, "ok" or "proceed" doesn't answer a specific question.
    - AI decisions (`decided_by: "ai"`) stand unless the developer overrides them.
-   - **Overrides that would break things:** a developer may pick "Replace with source code as-is" (`SOURCE`) on code target refactored or optimised, or a choice that breaks another decided item (a changed signature, a removed type). Before applying it, show in one table what the literal choice removes or breaks. Offer the **behaviour-preserving reading** (source's business rule kept inside target's code), and ask once: behaviour-preserving (recommended) or literal. Don't apply either reading silently.
+   - **Overrides that would break things:** a developer may pick "Use incoming change" (`SOURCE`) on code target refactored or optimised, or a choice that breaks another decided item (a changed signature, a removed type). Before applying it, show in one table what the literal choice removes or breaks. Offer the **behaviour-preserving reading** (source's business rule kept inside target's code), and ask once: behaviour-preserving (recommended) or literal. Don't apply either reading silently.
 3. Re-run preflight with the recorded folders and branches.
    - Same branches and clean → continue.
    - Local changes → ask the developer to stash first.
@@ -328,8 +337,14 @@ Then:
 4. **Duplicate build files:** if the summary lists "Skipping duplicate build file", run `pbx_targets.py <pbxproj> --duplicates` on the merged project and with `--ref <target.ref> --repo <target>` on the target branch. Duplicates that appear only after the merge came from the merge: remove the extra entry. If they were already on target, just mention them.
 5. Re-run `verify_coverage.py`; build fixes must not remove merged code.
 6. **Lint and tests:** run the profile's `lint` on the merged files (CI and commit hooks reject violations) and its `test` commands for the modules the merge touched. Report failures with the first error; fix only what the merge caused.
-6. **Hand-over gate:** don't say the merge "compiles" or "is done" until the **last** sequential run shows every scheme `SUCCEEDED`. Put the per-scheme table in your reply. If something still fails or couldn't be built here, say so plainly, with the scheme and first error.
-7. If the toolchain isn't available here, give the exact commands, ask the developer to run them, and fix from the errors they paste.
+   Then refresh the report so it matches the merged tree and the build logs:
+   ```bash
+   python3 "$SKILL_DIR/scripts/quality_scan.py" ~/Downloads/merge-reports/<ID>/analysis.json --tree <target_folder>
+   python3 "$SKILL_DIR/scripts/render_report.py" ~/Downloads/merge-reports/<ID>/analysis.json
+   ```
+   New SwiftLint warnings on merged lines are the merge's to fix (or to list). "Build logs could not resolve these modules" means package resolution / scheme linking, not merged code: check the dependency pin table first.
+7. **Hand-over gate:** don't say the merge "compiles" or "is done" until the **last** sequential run shows every scheme `SUCCEEDED`. Put the per-scheme table in your reply. If something still fails or couldn't be built here, say so plainly, with the scheme and first error.
+8. If the toolchain isn't available here, give the exact commands, ask the developer to run them, and fix from the errors they paste.
 
 ### 2.7 Hand over — the developer commits
 Only after the hand-over gate in 2.6 has passed (or the developer has accepted the listed failures):

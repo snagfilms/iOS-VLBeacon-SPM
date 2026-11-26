@@ -147,6 +147,78 @@ def test_refs(repo, sha, names, test_files, cache, type_name):
     return [{"file": f, "names": ns, "kind": "type only" if ns == [type_name] else "function"} for f, ns in sorted(hits.items())]
 
 
+FUNC_DECL = re.compile(r"\b(?:func\s+([A-Za-z_]\w*)|(init|deinit)\s*[(?{]|var\s+([A-Za-z_]\w*)\s*:[^=]*\{\s*$)")
+
+
+def enclosing_in_file(text, line_no):
+    """Nearest function (or computed property) declared above 1-based line_no in the full file."""
+    lines = (text or "").splitlines()
+    for raw in reversed(lines[:max(0, line_no)]):
+        m = FUNC_DECL.search(raw)
+        if m and not raw.strip().startswith("//"):
+            n = m.group(1) or m.group(3)
+            return n if n else None
+    return None
+
+
+def changed_functions(item, repo=None, shas=None, cache=None):
+    """Function names declared in, or enclosing, the changed lines (not the file's type name)."""
+    names = []
+    if repo:
+        for side, path in (("target", item.get("target_path")), ("source", item["file"])):
+            ln = snippet_line(item.get(side))
+            if not ln or not path:
+                continue
+            key = (shas[side], path)
+            if key not in cache:
+                cache[key] = show(repo, shas[side], path)
+            n = enclosing_in_file(cache[key], ln)
+            if n:
+                names.append(n)
+    for k in ("source_symbol", "target_symbol"):
+        v = item.get(k)
+        if v and "." in v.split("(")[0]:
+            names.append(v.split("(")[0].split(".")[-1])
+        elif v and not v.startswith("("):
+            names.append(v.split("(")[0])
+    for side in ("source", "target"):
+        snip = item.get(side) or {}
+        lines = snip.get("lines") or []
+        mk = snip.get("marked") or []
+        for i in mk:                                        # functions declared on changed lines
+            m = re.search(r"\bfunc\s+([A-Za-z_]\w*)", lines[i]) if i < len(lines) else None
+            if m:
+                names.append(m.group(1))
+        upto = (max(mk) if mk else len(lines) - 1)
+        for raw in reversed(lines[:upto + 1]):              # enclosing function
+            m = re.search(r"\bfunc\s+([A-Za-z_]\w*)", raw)
+            if m:
+                names.append(m.group(1)); break
+    return [n for n in dict.fromkeys(names) if len(n) > 3 and n not in SWIFT_KW]
+
+
+def callers_of(repo, sha, names, cache, limit=25):
+    """[{name, file, line, text}] call sites of each function in target (declarations excluded)."""
+    out = []
+    for n in names:
+        if n not in cache:
+            raw = git(repo, "grep", "-n", "-w", "-F", "-e", n, sha, "--", "*.swift", "*.m", "*.mm", "*.h", "*.kt", "*.java", ok=(0, 1)) or ""
+            rows = []
+            for l in raw.splitlines():
+                parts = l.split(":", 3)                     # sha:path:line:text
+                if len(parts) < 4:
+                    continue
+                txt = parts[3].strip()
+                if re.search(r"\bfunc\s+" + re.escape(n) + r"\b", txt) or txt.startswith(("//", "*", "/*")):
+                    continue
+                if not re.search(r"\b" + re.escape(n) + r"\s*[(:{]|\.\s*" + re.escape(n) + r"\b|#selector\([^)]*" + re.escape(n), txt):
+                    continue
+                rows.append({"name": n, "file": parts[1], "line": int(parts[2]), "text": txt[:160]})
+            cache[n] = rows
+        out += cache[n]
+    return out[:limit], len(out)
+
+
 # ---------------------------------------------------------------- swiftlint
 def swiftlint_version():
     exe = shutil.which("swiftlint")
@@ -308,7 +380,7 @@ def main():
     all_files = (git(repo, "ls-tree", "-r", "--name-only", shas["target"]) or "").splitlines()
     test_files = [p for p in all_files if TEST_PATH.search(p) and p.endswith((".swift", ".m", ".mm"))]
 
-    file_cache, test_cache = {}, {}
+    file_cache, test_cache, call_cache = {}, {}, {}
     q_items = {}
     by_file = collections.defaultdict(list)
     for it in items:
@@ -319,6 +391,9 @@ def main():
                              "tests": test_refs(repo, shas["target"], syms, test_files, test_cache,
                                                os.path.splitext(os.path.basename(fpath))[0].split("+")[0]),
                              "area": area_of(fpath), "lint": []}
+        fns = changed_functions(it, repo, shas, file_cache)
+        calls, ncalls = callers_of(repo, shas["target"], fns, call_cache)
+        q_items[it["id"]].update({"functions": fns, "callers": calls, "callers_total": ncalls})
 
     # ---- per-file risk
     since = f"--since={a.days}.days"
